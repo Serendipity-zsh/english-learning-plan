@@ -35,9 +35,6 @@
             <p class="eyebrow">每日打卡</p>
             <h1 id="today-title">今天的<br />专注练习</h1>
             <p id="week-summary" class="lede"></p>
-            <div id="day-switcher" class="day-switcher" aria-label="选择星期"></div>
-            <div class="daily-progress-copy"><span id="selected-day-target">今日计划</span><span id="selected-day-progress">0 / 4 项</span></div>
-            <div id="today-tasks" class="task-list"></div>
           </div>
           <aside class="goal-card">
             <div class="goal-label"><span>年度目标</span><span class="target-icon">◎</span></div>
@@ -51,6 +48,15 @@
             <p id="next-milestone" class="milestone"></p>
           </aside>
         </div>
+
+        <section class="daily-workspace" aria-labelledby="selected-day-target">
+          <div class="daily-workspace-head">
+            <div><p class="eyebrow">今日学习清单</p><h2 id="selected-day-target">今日计划</h2></div>
+            <strong id="selected-day-progress">0 / 4 项</strong>
+          </div>
+          <div id="day-switcher" class="day-switcher" aria-label="选择星期"></div>
+          <div id="today-tasks" class="task-list"></div>
+        </section>
 
         <div class="section-divider"></div>
         <section class="working-grid" aria-labelledby="focus-title">
