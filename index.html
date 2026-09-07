@@ -15,8 +15,38 @@
     <link rel="stylesheet" href="garden.css" />
   </head>
   <body>
+    <section id="landing-screen" class="landing-screen" aria-labelledby="landing-title">
+      <div class="landing-grid" aria-hidden="true"></div>
+      <div class="landing-orbit landing-orbit-one" aria-hidden="true"><span>practice</span></div>
+      <div class="landing-orbit landing-orbit-two" aria-hidden="true"><span>speak</span></div>
+      <div class="landing-wash landing-wash-blue" aria-hidden="true"></div>
+      <div class="landing-wash landing-wash-lilac" aria-hidden="true"></div>
+      <div class="landing-inner">
+        <a class="landing-brand" href="#home" data-home-link aria-label="英语进阶计划开屏页">
+          <span class="brand-mark">EN</span>
+          <span><small>English Year One</small><strong>英语进阶计划</strong></span>
+        </a>
+        <div class="landing-copy">
+          <p class="landing-kicker">A year of deliberate practice</p>
+          <h1 id="landing-title" tabindex="-1">把英语，练成<br />你能用的能力。</h1>
+          <p>从高 A1 到海外公司工作所需的英语能力。每天一个清晰任务，一年积累可见成果。</p>
+        </div>
+        <dl class="landing-metrics" aria-label="计划概览">
+          <div><dt>52</dt><dd>周可执行计划</dd></div>
+          <div><dt>650h</dt><dd>建议有效学习</dd></div>
+          <div><dt>6.5</dt><dd>IELTS 年度目标</dd></div>
+        </dl>
+        <button id="enter-learning" class="landing-primary" type="button">开始今天的练习 <span aria-hidden="true">→</span></button>
+        <p class="landing-footnote">你的打卡和学习记录默认仅保存在当前浏览器。</p>
+      </div>
+      <div class="landing-illustration" aria-hidden="true">
+        <span class="landing-note landing-note-one">Listen · repeat · use</span>
+        <img src="assets/reading.svg" width="1024" height="768" alt="" />
+      </div>
+    </section>
+
     <header class="site-header">
-      <a class="brand" href="#today" data-view-link="today" aria-label="英语进阶计划首页">
+      <a class="brand" href="#home" data-home-link aria-label="英语进阶计划开屏页">
         <span class="brand-mark">EN</span>
         <span><small>English Year One</small><strong>英语进阶计划</strong></span>
       </a>

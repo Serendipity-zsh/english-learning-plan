@@ -169,6 +169,7 @@
   }
 
   function showView(name) {
+    closeLanding();
     if (currentView) scrollPositions[currentView] = window.scrollY;
     $$('.view').forEach(v => v.classList.toggle('is-active', v.id === `view-${name}`));
     $$('[data-view]').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
@@ -180,10 +181,27 @@
     heading.setAttribute('tabindex','-1');
     heading.focus({preventScroll:true});
   }
-  window.addEventListener('popstate', () => { const view=location.hash.slice(1); showView(['today','roadmap','materials','records'].includes(view)?view:'today'); });
+  function closeLanding() {
+    const landing = $('#landing-screen');
+    landing.hidden = true;
+    document.body.classList.remove('is-landing');
+  }
+  function showLanding(updateHash = false) {
+    if (currentView) scrollPositions[currentView] = window.scrollY;
+    const landing = $('#landing-screen');
+    landing.hidden = false;
+    document.body.classList.add('is-landing');
+    if (updateHash && location.hash !== '#home') history.pushState(null, '', '#home');
+  }
+  window.addEventListener('popstate', () => {
+    const view = location.hash.slice(1);
+    if (['today','roadmap','materials','records'].includes(view)) showView(view);
+    else showLanding(false);
+  });
   $$('[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
-  $('[data-view-link]').addEventListener('click', e => { e.preventDefault(); showView('today'); });
-  const hashView = location.hash.slice(1); if (['today','roadmap','materials','records'].includes(hashView)) showView(hashView);
+  $$('[data-home-link]').forEach(link => link.addEventListener('click', e => { e.preventDefault(); showLanding(true); }));
+  $('#enter-learning').addEventListener('click', () => showView('today'));
+  const hashView = location.hash.slice(1);
 
   function renderDashboard() {
     const week = weeks[state.currentWeek - 1];
@@ -402,7 +420,8 @@
   $('#timer-log').addEventListener('click',()=>{const used=Math.max(0,Math.round((timerInitial-timerSeconds)/60));if(!used){toast('先开始计时，完成后再记录');return;} state.logs.push({date:today,skill:$('#timer-activity').value.replace('精听','').replace('练习',''),minutes:used,activity:$('#timer-activity').value,evidence:'专注计时器',note:'',week:state.currentWeek});saveState();toast(`已记录 ${used} 分钟`);$('#timer-reset').click();});
 
   renderDashboard(); renderRoadmap(); renderMaterials(); renderRecords(); loadDuolingoProfile();
-  showView(['today','roadmap','materials','records'].includes(hashView) ? hashView : 'today');
+  if (['today','roadmap','materials','records'].includes(hashView)) showView(hashView);
+  else showLanding(false);
   $('.timer-card h2').insertAdjacentHTML('beforebegin', `<span class="section-symbol">${icon('headphones')}</span>`);
   $('.method-section h2').insertAdjacentHTML('beforebegin', `<span class="section-symbol">${icon('speech')}</span>`);
 })();
