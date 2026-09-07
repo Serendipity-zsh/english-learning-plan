@@ -8,6 +8,7 @@
   let timerSeconds = 25 * 60;
   let timerInitial = timerSeconds;
   let timerId = null;
+  let expandedTaskKey = '';
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -22,6 +23,31 @@
   function saveState() { localStorage.setItem(storageKey, JSON.stringify(state)); renderDashboard(); renderRecords(); }
   function esc(value='') { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
   function toast(message) { const el=$('#toast'); el.textContent=message; el.classList.add('is-visible'); clearTimeout(el._timer); el._timer=setTimeout(()=>el.classList.remove('is-visible'),2400); }
+
+  function formatNumber(value) { return new Intl.NumberFormat('zh-CN').format(Number(value || 0)); }
+  function formatSyncTime(value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '同步时间未知' : `更新于 ${new Intl.DateTimeFormat('zh-CN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(date)}`;
+  }
+  async function loadDuolingoProfile() {
+    const card = $('#duolingo-card');
+    try {
+      const response = await fetch(`duolingo-data.json?v=${Date.now()}`, { cache:'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const profile = await response.json();
+      $('#duolingo-title').textContent = `@${profile.username}`;
+      $('#duolingo-streak').textContent = formatNumber(profile.streak);
+      $('#duolingo-english-xp').textContent = formatNumber(profile.englishXp);
+      $('#duolingo-state').textContent = '已同步';
+      $('#duolingo-sync-time').textContent = `${formatSyncTime(profile.syncedAt)} · 非官方公开资料同步 · Duolingo 分数仍需手动记录`;
+      card.setAttribute('aria-busy', 'false');
+    } catch {
+      $('#duolingo-state').textContent = '暂不可用';
+      $('#duolingo-state').classList.add('is-error');
+      $('#duolingo-sync-time').textContent = '公开资料暂时无法读取；不会影响每日计划和本地打卡。';
+      card.setAttribute('aria-busy', 'false');
+    }
+  }
 
   const resourceLinks = [
     { match:['Duolingo'], label:'打开 Duolingo', url:'https://www.duolingo.com/' },
@@ -138,18 +164,34 @@
     }).join('');
     $$('[data-day]').forEach(button => button.addEventListener('click', () => { state.selectedDay=Number(button.dataset.day); saveState(); }));
     const keyPrefix = `w${week.week}-d${selectedDay}-t`;
+    const firstIncompleteIndex = day.tasks.findIndex((_, i) => !state.completedTasks[`${keyPrefix}${i}`]);
+    if (!expandedTaskKey.startsWith(keyPrefix)) expandedTaskKey = `${keyPrefix}${firstIncompleteIndex < 0 ? 0 : firstIncompleteIndex}`;
     $('#today-tasks').innerHTML = day.tasks.map((task, i) => {
-      const checked = Boolean(state.completedTasks[`${keyPrefix}${i}`]);
-      const note = state.taskNotes?.[`${keyPrefix}${i}`] || '';
-      return `<article class="study-task ${checked?'is-done':''}">
-        <div class="study-task-head"><span class="task-index">${String(i+1).padStart(2,'0')}</span><div><strong>${esc(task.title)}</strong><small>${esc(task.material)} · ${task.minutes} 分钟</small></div><label class="task-check"><input type="checkbox" data-task-key="${keyPrefix}${i}" ${checked?'checked':''}><span>${checked?'已完成':'打卡'}</span></label></div>
-        <div class="study-task-body"><div><p class="task-label">今天具体怎么学</p><ol>${task.steps.map(step=>`<li>${esc(step)}</li>`).join('')}</ol></div><div class="task-proof"><span>完成标准</span><p>${esc(task.evidence)}</p></div></div>
-        ${task.prompt ? `<div class="practice-prompt"><div><span>可复制的口语陪练提示词</span><button data-copy-prompt="${i}">复制提示词</button></div><p>${esc(task.prompt)}</p></div>` : ''}
-        <div class="study-task-actions"><a href="${esc(task.resource.url)}" target="_blank" rel="noopener noreferrer">${esc(task.resource.label)} ↗</a><button data-start-task="${i}">使用专注计时器</button></div>
-        <label class="task-note"><span>成果或问题记录</span><input data-task-note="${keyPrefix}${i}" value="${esc(note)}" placeholder="例如：VOA Lesson 3，测验 8/10，过去时仍易错"></label>
+      const taskKey = `${keyPrefix}${i}`;
+      const checked = Boolean(state.completedTasks[taskKey]);
+      const note = state.taskNotes?.[taskKey] || '';
+      const expanded = expandedTaskKey === taskKey;
+      const next = i === firstIncompleteIndex;
+      return `<article class="study-task ${checked?'is-done':''} ${expanded?'is-expanded':''} ${next?'is-next':''}">
+        <div class="study-task-head"><span class="task-index">${String(i+1).padStart(2,'0')}</span><div><strong>${esc(task.title)}</strong><small>${esc(task.material)} · ${task.minutes} 分钟${next?' · 下一项':''}</small></div><button class="task-expand" data-expand-task="${taskKey}" aria-expanded="${expanded}">${expanded?'收起':'查看步骤'}</button><label class="task-check"><input type="checkbox" data-task-key="${taskKey}" ${checked?'checked':''}><span>${checked?'已完成':'打卡'}</span></label></div>
+        <div class="task-detail" ${expanded?'':'hidden'}>
+          <div class="study-task-body"><div><p class="task-label">今天具体怎么学</p><ol>${task.steps.map(step=>`<li>${esc(step)}</li>`).join('')}</ol></div><div class="task-proof"><span>完成标准</span><p>${esc(task.evidence)}</p></div></div>
+          ${task.prompt ? `<div class="practice-prompt"><div><span>可复制的口语陪练提示词</span><button data-copy-prompt="${i}">复制提示词</button></div><p>${esc(task.prompt)}</p></div>` : ''}
+          <div class="study-task-actions"><a href="${esc(task.resource.url)}" target="_blank" rel="noopener noreferrer">${esc(task.resource.label)} ↗</a><button data-start-task="${i}">使用专注计时器</button></div>
+          <label class="task-note"><span>成果或问题记录</span><input data-task-note="${taskKey}" value="${esc(note)}" placeholder="例如：VOA Lesson 3，测验 8/10，过去时仍易错"></label>
+        </div>
       </article>`;
     }).join('');
-    $$('[data-task-key]').forEach(input => input.addEventListener('change', e => { state.completedTasks[e.target.dataset.taskKey]=e.target.checked; saveState(); }));
+    $$('[data-expand-task]').forEach(button => button.addEventListener('click', () => { expandedTaskKey = expandedTaskKey === button.dataset.expandTask ? '' : button.dataset.expandTask; renderDashboard(); }));
+    $$('[data-task-key]').forEach(input => input.addEventListener('change', e => {
+      const taskKey = e.target.dataset.taskKey;
+      state.completedTasks[taskKey] = e.target.checked;
+      if (e.target.checked) {
+        const taskIndex = Number(taskKey.split('-t').pop());
+        expandedTaskKey = taskIndex + 1 < day.tasks.length ? `${keyPrefix}${taskIndex + 1}` : taskKey;
+      }
+      saveState();
+    }));
     $$('[data-task-note]').forEach(input => input.addEventListener('change', e => { state.taskNotes[e.target.dataset.taskNote]=e.target.value.trim(); localStorage.setItem(storageKey, JSON.stringify(state)); toast('任务成果已保存'); }));
     $$('[data-copy-prompt]').forEach(button => button.addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(day.tasks[Number(button.dataset.copyPrompt)].prompt); toast('提示词已复制，可以打开 ChatGPT 语音'); }
@@ -218,5 +260,5 @@
   $('#timer-reset').addEventListener('click',()=>{clearInterval(timerId);timerId=null;timerSeconds=timerInitial=25*60;updateTimer();$('#timer-toggle').textContent='开始';});
   $('#timer-log').addEventListener('click',()=>{const used=Math.max(0,Math.round((timerInitial-timerSeconds)/60));if(!used){toast('先开始计时，完成后再记录');return;} state.logs.push({date:today,skill:$('#timer-activity').value.replace('精听','').replace('练习',''),minutes:used,activity:$('#timer-activity').value,evidence:'专注计时器',note:'',week:state.currentWeek});saveState();toast(`已记录 ${used} 分钟`);$('#timer-reset').click();});
 
-  renderDashboard(); renderRoadmap(); renderMaterials(); renderRecords();
+  renderDashboard(); renderRoadmap(); renderMaterials(); renderRecords(); loadDuolingoProfile();
 })();
