@@ -28,4 +28,13 @@ for (const week of plan.weeks) {
 const recommendedHours = plan.weeks.reduce((sum, week) => sum + week.hours, 0);
 if (recommendedHours < 650) throw new Error(`Recommended hours total only ${recommendedHours}`);
 
-console.log(`Validated ${plan.weeks.length} weeks, ${plan.materials.length} materials, ${recommendedHours} recommended hours.`);
+const appSource = fs.readFileSync('app.js', 'utf8');
+const dailyFeatureMarkers = ['taskNotes', '今天具体怎么学', '完成标准', 'data-copy-prompt', 'data-start-task', '周一', '周日'];
+for (const marker of dailyFeatureMarkers) {
+  if (!appSource.includes(marker)) throw new Error(`Daily learning workflow is missing: ${marker}`);
+}
+if ((appSource.match(/name:'周[一二三四五六日]'/g) || []).length !== 7) {
+  throw new Error('Expected seven daily learning schedules');
+}
+
+console.log(`Validated ${plan.weeks.length} weeks, 7 daily schedules, ${plan.materials.length} materials, ${recommendedHours} recommended hours.`);

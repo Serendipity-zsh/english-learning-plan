@@ -2,7 +2,7 @@
   const { phases, weeks, materials } = window.LEARNING_PLAN;
   const storageKey = 'english-year-one-v1';
   const calendarDayIndex = (new Date().getDay() + 6) % 7;
-  const defaultState = { currentWeek: 1, selectedDay: calendarDayIndex, completedTasks: {}, passedWeeks: [], logs: [], scores: [] };
+  const defaultState = { currentWeek: 1, selectedDay: calendarDayIndex, completedTasks: {}, taskNotes: {}, passedWeeks: [], logs: [], scores: [] };
   let state = loadState();
   let activeFilter = 0;
   let timerSeconds = 25 * 60;
@@ -22,24 +22,92 @@
   function saveState() { localStorage.setItem(storageKey, JSON.stringify(state)); renderDashboard(); renderRecords(); }
   function esc(value='') { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
   function toast(message) { const el=$('#toast'); el.textContent=message; el.classList.add('is-visible'); clearTimeout(el._timer); el._timer=setTimeout(()=>el.classList.remove('is-visible'),2400); }
+
+  const resourceLinks = [
+    { match:['Duolingo'], label:'打开 Duolingo', url:'https://www.duolingo.com/' },
+    { match:['VOA'], label:'打开 VOA 课程', url:'https://learningenglish.voanews.com/p/5644.html' },
+    { match:['BBC','6 Minute English','English for Work','Pronunciation'], label:'打开 BBC Learning English', url:'https://www.bbc.co.uk/learningenglish/' },
+    { match:['IELTS 官方','IELTS 口语题','IELTS 样题'], label:'打开 IELTS 官方练习', url:'https://ielts.org/take-a-test/preparation-resources/sample-test-questions' },
+    { match:['Cambridge IELTS'], label:'打开 Cambridge IELTS', url:'https://www.cambridge.org/elt/blog/category/exams/ielts/' },
+    { match:['Grammar in Use','语法'], label:'打开 Grammar in Use', url:'https://www.cambridge.org/elt/grammarinuse' },
+    { match:['Bookworms','分级读物'], label:'打开 Oxford Bookworms', url:'https://elt.oup.com/catalogue/items/global/graded_readers/oxford_bookworms_library/' },
+    { match:['Modern Family','The Office','Silicon Valley','影视'], label:'查看影视资料', url:'https://www.imdb.com/' },
+    { match:['TED'], label:'打开 TED Talks', url:'https://www.ted.com/talks' },
+    { match:['技术文档','GitHub Issue'], label:'打开 GitHub Docs', url:'https://docs.github.com/en' },
+    { match:['ChatGPT','写作','复述','录音','模拟','复盘'], label:'打开 ChatGPT 练习', url:'https://chatgpt.com/' },
+  ];
+
+  function resourceFor(text) {
+    return resourceLinks.find(item => item.match.some(keyword => String(text).includes(keyword))) || resourceLinks.find(item => item.match.includes('ChatGPT'));
+  }
+
   function dailySchedule(week) {
-    const mainMaterial = week.materials.split('；')[0];
+    const weekMaterials = week.materials.split('；');
+    const mainMaterial = weekMaterials[0];
+    const supportMaterial = weekMaterials[1] || mainMaterial;
     const scale = week.hours / 12.5;
     const minutes = value => Math.max(5, Math.round(value * scale / 5) * 5);
-    const task = (title, detail, value) => ({ title, detail: `${detail} · ${minutes(value)} 分钟`, minutes: minutes(value) });
+    const task = (title, material, value, steps, evidence, resourceText=material, prompt='') => ({
+      title, material, minutes:minutes(value), steps, evidence, resource:resourceFor(resourceText), prompt,
+    });
+    const speakingPrompt = goal => `你是我的英语口语教练。我目前约为高 A1，正在进行第 ${week.week} 周“${week.title}”训练，重点是：${week.focus}。请围绕“${goal}”和我进行英文对话：一次只问一个问题；等我回答后再继续；不要立即打断纠错；对话结束后用中文列出 3 个最重要的错误、给出更自然的表达，并让我重新回答一次。`;
     return [
-      { name:'周一', theme:'进入本周主题', tasks:[task('Duolingo 基础练习','复习并学习本周句型',20),task('主材料学习',mainMaterial,35),task('关键句跟读','选择 5 句录音对比',15),task('语法整理',week.focus,20)] },
-      { name:'周二', theme:'阅读和短写作', tasks:[task('Duolingo 基础练习','保持每日连续学习',20),task('主材料第二轮',`${mainMaterial} 听读结合`,30),task('英文阅读','划出主旨和 5 个表达',20),task('短写作','用本周表达完成一段文字',20)] },
-      { name:'周三', theme:'听力和口语', tasks:[task('Duolingo 基础练习','复习薄弱题目',20),task('精听训练','听写关键句并对照文本',30),task('ChatGPT 语音','围绕本周主题连续对话',25),task('口语复盘','记录 3 个错误并重说',15)] },
-      { name:'周四', theme:'准确度训练', tasks:[task('Duolingo 基础练习','巩固基础句型',20),task('主材料第三轮',`${mainMaterial} 复述和测验`,30),task('语法练习',week.focus,20),task('修改写作','根据反馈完成一次重写',20)] },
-      { name:'周五', theme:'迁移到真实表达', tasks:[task('Duolingo 基础练习','完成本周 App 目标',20),task('本周材料复习',week.materials,30),task('口语输出',`围绕“${week.title}”录音`,25),task('表达复习','主动使用 10 个本周表达',15)] },
-      { name:'周六', theme:'长任务和作品', tasks:[task('影视或长材料精听','只用英文字幕，精学 5–10 分钟',45),task('跟读和表达整理','保存 10 个可复用表达',25),task('本周写作',week.output,45),task('脱稿复述','保存音频或会话文字',35)] },
-      { name:'周日', theme:'测试和周复盘', tasks:[task('本周测试',week.check,60),task('工作英语模拟','站会、会议、项目介绍或面试',30),task('错题复盘','整理最高频的 3 类错误',30),task('安排下周','记录成绩、证据和下周重点',30)] },
+      { name:'周一', theme:'进入本周主题', tasks:[
+        task('Duolingo 基础练习','Duolingo：完成当前路径课程',20,['完成 1 个新单元或 2 个短课','错题立即重做，不追求刷经验值','抄下 5 个能用于本周主题的句子'],'课程完成；错题已订正；保存 5 个句子'),
+        task('主材料首次学习',mainMaterial,35,['先不查词听或读一遍，写下主题','第二遍对照英文文本，标记 5–8 个表达','完成页面自带练习或口头回答 5 个问题'],`写下首次理解率和 ${mainMaterial} 的课程/章节名`),
+        task('关键句跟读',`${mainMaterial} 中的 5 个关键句`,15,['每句听 3 遍并标出重音','逐句跟读，再整段影子跟读','录制一次不看文本的复述'],'保存 1 段录音，并写下最难的 2 个发音',mainMaterial),
+        task('语法与造句',week.focus,20,['在语法书中查找本周相关章节','完成至少 8 道对应练习','用自己的工作或生活场景造 8 句'],`练习正确率至少 75%；保存 3 个错句`,'Grammar in Use'),
+      ] },
+      { name:'周二', theme:'阅读和短写作', tasks:[
+        task('Duolingo 复习','Duolingo：昨日错题和本周句型',20,['先做昨日错题复习','完成 1–2 个短课','大声读出所有完整句子'],'连续学习完成；记录今天最易错的 1 个句型'),
+        task('辅助材料首次学习',supportMaterial,30,['先不查词听或读一遍','按段落写 3–5 个英文关键词','用关键词口头复述主要内容'],`记录具体课程/章节名；复述覆盖至少 70% 主要信息`,supportMaterial),
+        task('主题阅读','分级读物或 BBC：选择与本周主题相关的短文',20,['限时阅读，不逐词翻译','写出一句主旨和 3 个细节','选出 5 个可复用表达'],'保存主旨、3 个细节和 5 个表达',week.phase < 3 ? 'Bookworms' : 'BBC'),
+        task('短写作',`围绕“${week.title}”写一段英文`,20,['先独立完成 80–150 词初稿','检查时态、主谓一致和冠词','把 3 个本周新表达放入文章'],`保存初稿；达到 80–150 词`, 'ChatGPT'),
+      ] },
+      { name:'周三', theme:'听力和口语', tasks:[
+        task('Duolingo 听说练习','Duolingo：优先完成听力和口语题',20,['完成 1–2 个短课','听力题错后不看答案重听一次','每个口语句子至少说两遍'],'记录听力或口语最常见的 1 个问题'),
+        task('精听训练',`${mainMaterial}：选择 60–90 秒片段`,30,['盲听并写下能听到的词','逐句听写，再对照英文文本','遮住文本完整重听并口头总结'],'计算听写正确率；保存 5 个没听出的表达',mainMaterial),
+        task('ChatGPT 语音对话',`主题：${week.title}`,25,['复制下方提示词并打开 ChatGPT 语音','连续对话，中途不切换中文','结束后接受集中纠错并重新回答'],'完成至少 10 轮对话；保存反馈或会话文字','ChatGPT',speakingPrompt(week.title)),
+        task('口语纠错重说','使用刚才对话中的反馈',15,['选出影响最大的 3 个错误','分别写出正确句子并朗读 3 遍','重新录制 1–2 分钟回答'],'保存纠错前后表达；3 个错误均已重说','ChatGPT'),
+      ] },
+      { name:'周四', theme:'准确度训练', tasks:[
+        task('Duolingo 准确度练习','Duolingo：复习薄弱技能',20,['打开错题或薄弱技能','完成 2 个复习单元','遇到猜对的题也要解释原因'],'正确率达到 80% 或完成二次订正'),
+        task('辅助材料第二轮',`${supportMaterial}：复述和测验`,30,['脱离文本完整复述','完成材料自带测验或自拟 8 个问题','只重学答错部分'],`测验至少 75%；保存复述录音`,supportMaterial),
+        task('语法专项',week.focus,20,['复习周一的 3 个错句','再完成 10 道同类型题','把正确结构用于 5 个工作句子'],'10 道题正确率至少 80%；保存 5 个工作句','Grammar in Use'),
+        task('修改写作','修改周二的英文短文',20,['先让 ChatGPT 只标问题、不代写','按反馈自行修改结构和语言','对照前后版本总结 3 类错误'],'保存初稿与终稿；列出 3 条修改说明','ChatGPT'),
+      ] },
+      { name:'周五', theme:'迁移到真实表达', tasks:[
+        task('Duolingo 本周收尾','Duolingo：完成本周 App 目标',20,['完成剩余路径任务','重做本周标记过的错题','口头复述本周学过的 5 个句子'],'App 周目标完成；5 个句子能脱稿说出'),
+        task('本周材料复习',week.materials,30,['快速回看本周所有笔记','从材料中筛选 10 个高价值表达','为每个表达写一个自己的例句'],'保存 10 个表达和 10 个个人例句',week.materials),
+        task('主题口语录音',`围绕“${week.title}”脱稿表达`,25,['列 5 个关键词，不写完整稿','录制 2–5 分钟完整表达','回听并标记停顿、语法和发音问题'],'保存录音；长停顿不超过 3 次','ChatGPT',speakingPrompt(`用 2–5 分钟介绍${week.title}，然后回答追问`)),
+        task('主动词汇复习','本周 10 个核心表达',15,['遮住释义进行回忆','口头说出 10 个个人例句','把不会的表达加入下周复习清单'],'至少 8/10 能在新句子中正确使用','ChatGPT'),
+      ] },
+      { name:'周六', theme:'长任务和作品', tasks:[
+        task('影视或长材料精听','本周指定影视、BBC 或长材料',45,['选择 5–10 分钟片段，只开英文字幕','分段精听并标出连读、弱读和语块','关闭字幕重看并复述情节或观点'],'首次/复听理解率各记录一次；保存片段名称',week.materials),
+        task('跟读与表达库','从长材料提取 10 个自然表达',25,['跟读每个表达所在完整句','写清语境和可替换部分','用自己的工作场景改写 10 句'],'保存 10 个表达；至少 5 个能脱稿说出',week.materials),
+        task('本周核心作品',week.output,45,['先按要求独立完成完整版本','用本周验收标准自查','获取反馈后只修改最重要的 3 个问题'],`完成并保存：${week.output}`,'ChatGPT'),
+        task('脱稿复述与问答',`复述本周主题“${week.title}”`,35,['用 5 个关键词完成脱稿复述','让 ChatGPT 连续追问至少 5 次','整理不会表达的内容并重新回答'],'保存音频或会话文字；完成 5 个追问','ChatGPT',speakingPrompt(`复述本周学习成果，并接受至少 5 个追问`)),
+      ] },
+      { name:'周日', theme:'测试和周复盘', tasks:[
+        task('本周验收测试',week.check,60,['严格计时并独立完成','对照答案或标准评分','把错误分为知识、听辨、表达和时间问题'],`记录验收结果：${week.check}`,week.materials),
+        task('工作英语模拟','站会、会议、项目介绍或面试',30,['选择一种与当前阶段匹配的工作场景','连续完成模拟，中途不切换中文','让对方追问并在最后集中反馈'],'保存录音或文字；至少完成 5 个追问','ChatGPT',speakingPrompt('模拟真实海外公司工作场景')), 
+        task('错题与错误复盘','本周笔记、录音和写作版本',30,['统计重复出现的错误','选出最高频的 3 类错误','每类写出原因、正确示例和下周动作'],'形成 3 条可执行的错误清单','ChatGPT'),
+        task('记录成绩并安排下周','网站学习记录与第 52 周路线',30,['填写本周有效时长和测试成绩','确认七天任务与证据是否齐全','只选择 1–2 个问题带入下周'],`完成周记录；决定本周是否达到：${week.check}`,'ChatGPT'),
+      ] },
     ];
   }
 
   function dayIsComplete(weekNumber, dayIndex, schedule) {
     return schedule[dayIndex].tasks.every((_, taskIndex) => state.completedTasks[`w${weekNumber}-d${dayIndex}-t${taskIndex}`]);
+  }
+
+  function skillForTask(title) {
+    if (/听|影视/.test(title)) return '听力精听';
+    if (/口语|跟读|复述|语音|录音|模拟/.test(title)) return '口语练习';
+    if (/写作|修改/.test(title)) return '写作';
+    if (/阅读|材料/.test(title)) return '阅读';
+    if (/测试|验收|复盘|成绩/.test(title)) return '模考复盘';
+    return '语法词汇';
   }
 
   function showView(name) {
@@ -72,9 +140,27 @@
     const keyPrefix = `w${week.week}-d${selectedDay}-t`;
     $('#today-tasks').innerHTML = day.tasks.map((task, i) => {
       const checked = Boolean(state.completedTasks[`${keyPrefix}${i}`]);
-      return `<label class="task-row ${checked?'is-done':''}"><input type="checkbox" data-task-key="${keyPrefix}${i}" ${checked?'checked':''} aria-label="完成 ${esc(task.title)}"><span><strong>${esc(task.title)}</strong><small>${esc(task.detail)}</small></span></label>`;
+      const note = state.taskNotes?.[`${keyPrefix}${i}`] || '';
+      return `<article class="study-task ${checked?'is-done':''}">
+        <div class="study-task-head"><span class="task-index">${String(i+1).padStart(2,'0')}</span><div><strong>${esc(task.title)}</strong><small>${esc(task.material)} · ${task.minutes} 分钟</small></div><label class="task-check"><input type="checkbox" data-task-key="${keyPrefix}${i}" ${checked?'checked':''}><span>${checked?'已完成':'打卡'}</span></label></div>
+        <div class="study-task-body"><div><p class="task-label">今天具体怎么学</p><ol>${task.steps.map(step=>`<li>${esc(step)}</li>`).join('')}</ol></div><div class="task-proof"><span>完成标准</span><p>${esc(task.evidence)}</p></div></div>
+        ${task.prompt ? `<div class="practice-prompt"><div><span>可复制的口语陪练提示词</span><button data-copy-prompt="${i}">复制提示词</button></div><p>${esc(task.prompt)}</p></div>` : ''}
+        <div class="study-task-actions"><a href="${esc(task.resource.url)}" target="_blank" rel="noopener noreferrer">${esc(task.resource.label)} ↗</a><button data-start-task="${i}">使用专注计时器</button></div>
+        <label class="task-note"><span>成果或问题记录</span><input data-task-note="${keyPrefix}${i}" value="${esc(note)}" placeholder="例如：VOA Lesson 3，测验 8/10，过去时仍易错"></label>
+      </article>`;
     }).join('');
     $$('[data-task-key]').forEach(input => input.addEventListener('change', e => { state.completedTasks[e.target.dataset.taskKey]=e.target.checked; saveState(); }));
+    $$('[data-task-note]').forEach(input => input.addEventListener('change', e => { state.taskNotes[e.target.dataset.taskNote]=e.target.value.trim(); localStorage.setItem(storageKey, JSON.stringify(state)); toast('任务成果已保存'); }));
+    $$('[data-copy-prompt]').forEach(button => button.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(day.tasks[Number(button.dataset.copyPrompt)].prompt); toast('提示词已复制，可以打开 ChatGPT 语音'); }
+      catch { toast('复制失败，请手动选择提示词'); }
+    }));
+    $$('[data-start-task]').forEach(button => button.addEventListener('click', () => {
+      const task = day.tasks[Number(button.dataset.startTask)];
+      $('#timer-activity').value = skillForTask(task.title);
+      $('#timer-title').scrollIntoView({ behavior:'smooth', block:'center' });
+      toast(`已准备：${task.title}`);
+    }));
     const selectedCompleted = day.tasks.filter((_, taskIndex) => state.completedTasks[`${keyPrefix}${taskIndex}`]).length;
     const completedDays = schedule.filter((_, dayIndex) => dayIsComplete(week.week, dayIndex, schedule)).length;
     $('#selected-day-target').textContent = `${day.name} · ${day.theme}`;
