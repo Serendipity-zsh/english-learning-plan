@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#24483b" />
+    <meta name="theme-color" content="#f5faf7" />
     <meta name="description" content="从高 A1 到雅思 6.5 的 52 周英语学习与进度记录计划" />
     <meta property="og:title" content="英语进阶计划" />
     <meta property="og:description" content="一套可执行、可记录、可验收的 52 周英语学习计划" />
@@ -44,13 +44,14 @@
               <strong id="continue-task-title">准备今日学习</strong>
               <small id="continue-task-meta">查看具体步骤</small>
             </button>
+            <img class="study-illustration" src="assets/reading.svg" width="1024" height="768" alt="" aria-hidden="true" />
           </div>
           <aside class="progress-rail" aria-label="学习进度概览">
             <section class="goal-card">
               <div class="goal-label"><span>年度目标</span><span class="target-icon" aria-hidden="true">◎</span></div>
               <div class="goal-score-row"><p class="goal-score">6.5</p><p class="goal-caption">IELTS<br />target</p></div>
               <div class="progress-copy"><span>年度有效学习</span><span id="hours-copy">0 / 650 小时</span></div>
-              <div class="progress-track"><span id="hours-progress"></span></div>
+              <div class="progress-track" role="progressbar" aria-label="年度有效学习" aria-valuemin="0" aria-valuemax="650" aria-valuenow="0"><span id="hours-progress"></span></div>
               <div class="goal-stats">
                 <div><span aria-hidden="true">✓</span><strong id="today-completed">0/4</strong><small>当日任务</small></div>
                 <div><span aria-hidden="true">▦</span><strong id="checked-days">0/7</strong><small>本周打卡</small></div>
@@ -82,6 +83,7 @@
             <span class="is-current"><b>1</b>选任务</span><i aria-hidden="true"></i><span><b>2</b>专注练习</span><i aria-hidden="true"></i><span><b>3</b>留下证据</span><i aria-hidden="true"></i><span><b>4</b>完成打卡</span>
           </div>
           <div id="today-tasks" class="task-list"></div>
+          <p class="daily-help">打卡记录完成情况；有效学习时长请通过计时器或学习记录单独填写。</p>
         </section>
 
         <div class="section-divider"></div>
@@ -115,10 +117,13 @@
       <section id="view-roadmap" class="view" aria-labelledby="roadmap-title">
         <div class="view-heading">
           <div><p class="eyebrow">完整路线</p><h1 id="roadmap-title">52周学习计划</h1></div>
-          <div class="week-jump"><label for="week-select">跳转到</label><select id="week-select"></select></div>
+          <div class="week-jump"><label for="week-select">选择学习周并进入每日安排</label><select id="week-select"></select></div>
         </div>
+        <section class="journey-banner" aria-label="学习路线概览"><div><p class="workspace-kicker">你的英语成长路线</p><h2 id="journey-title"></h2><p id="journey-copy"></p><button id="locate-week" class="secondary-button">定位本周</button></div><img src="assets/plant.svg" width="1024" height="768" alt="" aria-hidden="true" /></section>
         <div id="phase-filters" class="filter-row" aria-label="阶段筛选"></div>
+        <nav id="roadmap-pagination-top" class="pagination" aria-label="学习计划顶部分页"></nav>
         <div id="roadmap-list" class="roadmap-list"></div>
+        <nav id="roadmap-pagination" class="pagination" aria-label="学习计划分页"></nav>
       </section>
 
       <section id="view-materials" class="view" aria-labelledby="materials-title">
@@ -126,6 +131,23 @@
           <div><p class="eyebrow">固定工具栈</p><h1 id="materials-title">全年学习材料</h1></div>
           <p class="view-intro">尽量使用同一组平台。每项材料都对应明确训练动作，避免只收藏不练习。</p>
         </div>
+        <label class="material-search">查找学习材料<input id="material-search" class="field-control" type="search" placeholder="搜索平台、技能或剧名，例如：口语、The Office" /></label>
+        <p class="resource-help">材料在原网站打开；回到这里记录成果和有效学习时间。</p>
+        <details class="add-material" id="add-material-panel">
+          <summary>添加自己的学习材料</summary>
+          <p>添加后会出现在当前浏览器的材料库中，并包含在导出备份里。</p>
+          <form id="material-form" class="stacked-form">
+            <label>材料名称<input id="material-name" type="text" maxlength="80" placeholder="例如：English Pod · Business Meetings" required /></label>
+            <label>训练用途<input id="material-use" type="text" maxlength="80" placeholder="例如：会议表达与听力" required /></label>
+            <label>适用阶段<input id="material-phase" type="text" maxlength="50" placeholder="例如：第 13–24 周，或全年" value="全年" /></label>
+            <label>训练类型<select id="material-category"><option>听力</option><option>口语</option><option>阅读与语法</option><option>考试</option><option>影视</option></select></label>
+            <label class="material-url-field">材料链接<input id="material-url" type="url" maxlength="500" placeholder="https://…" required /></label>
+            <label class="material-notes-field">练习要点<textarea id="material-notes" rows="3" maxlength="300" placeholder="每行一条，例如：\n每次精听 3–5 分钟\n记录 5 个可复用表达"></textarea></label>
+            <button class="primary-button" type="submit">加入材料库</button>
+          </form>
+        </details>
+        <div id="material-filters" class="filter-row" aria-label="按训练类型筛选"></div>
+        <p id="material-results" class="result-count" role="status"></p>
         <div id="materials-grid" class="materials-grid"></div>
         <section class="method-section">
           <p class="eyebrow">训练方法</p><h2>同一份材料完成输入和输出闭环</h2>
@@ -141,17 +163,17 @@
       <section id="view-records" class="view" aria-labelledby="records-title">
         <div class="view-heading">
           <div><p class="eyebrow">可审计进度</p><h1 id="records-title">学习记录</h1></div>
-          <div class="record-actions"><button id="export-button" class="secondary-button">导出备份</button><label class="secondary-button file-button">导入备份<input id="import-input" type="file" accept="application/json" /></label></div>
+          <div class="record-actions"><button class="primary-button" data-open-form="log-form">记一笔</button><button class="secondary-button" data-open-form="score-form">记录测评</button><button id="export-button" class="secondary-button">导出备份</button><label class="secondary-button file-button">导入备份<input id="import-input" type="file" accept="application/json" /></label></div>
         </div>
         <div class="record-summary">
           <article><small>累计有效学习</small><strong id="record-total-hours">0</strong><span>小时</span></article>
           <article><small>累计实际开口</small><strong id="record-speaking-minutes">0</strong><span>分钟</span></article>
           <article><small>最近 IELTS 模考</small><strong id="record-ielts">—</strong><span>总分</span></article>
-          <article><small>当前 Duolingo</small><strong id="record-duolingo">27</strong><span>分</span></article>
+          <article><small>Duolingo 分数 · 手动记录</small><strong id="record-duolingo">27</strong><span>分</span></article>
         </div>
         <div class="records-layout">
-          <section class="form-card" aria-labelledby="log-form-title">
-            <h2 id="log-form-title">添加学习记录</h2>
+          <details class="form-card">
+            <summary id="log-form-title">添加学习记录</summary>
             <form id="log-form" class="stacked-form">
               <label>日期<input id="log-date" type="date" required /></label>
               <label>技能<select id="log-skill"><option>听力</option><option>口语</option><option>阅读</option><option>写作</option><option>语法词汇</option><option>模考复盘</option></select></label>
@@ -161,9 +183,9 @@
               <label>主要问题<input id="log-note" type="text" placeholder="例如 连读、过去时、冠词" /></label>
               <button class="primary-button" type="submit">保存记录</button>
             </form>
-          </section>
-          <section class="form-card" aria-labelledby="score-form-title">
-            <h2 id="score-form-title">添加测评成绩</h2>
+          </details>
+          <details class="form-card">
+            <summary id="score-form-title">添加测评成绩</summary>
             <form id="score-form" class="stacked-form">
               <label>日期<input id="score-date" type="date" required /></label>
               <label>测评类型<select id="score-type"><option>IELTS 模考</option><option>Duolingo</option><option>阶段验收</option></select></label>
@@ -172,11 +194,12 @@
               <label>下阶段重点<input id="score-note" type="text" placeholder="例如 写作论证和口语流利度" /></label>
               <button class="primary-button" type="submit">保存成绩</button>
             </form>
-          </section>
+          </details>
         </div>
         <section class="history-section">
-          <div class="section-heading"><div><p class="eyebrow">最近记录</p><h2>学习证据</h2></div><button id="clear-data" class="danger-button">清空所有本地数据</button></div>
+          <div class="section-heading"><h2>学习足迹</h2><label class="history-filter">记录类型<select id="history-filter" class="field-control"><option value="all">全部记录</option><option value="学习">学习记录</option><option value="测评">测评成绩</option></select></label></div>
           <div id="history-list" class="history-list"></div>
+          <nav id="history-pagination" class="pagination" aria-label="学习记录分页"></nav>
         </section>
         <section class="counting-rules">
           <div><p class="eyebrow">计时标准</p><h2>什么算有效学习</h2></div>
@@ -185,9 +208,10 @@
             <article><h3>不计入</h3><ul><li>后台播放或边刷手机边看</li><li>只看中文字幕的影视内容</li><li>寻找资料和整理文件</li><li>重复完成已经完全掌握的简单题</li><li>没有任务、产物或反馈的浏览</li></ul></article>
           </div>
         </section>
+        <details class="data-management"><summary>数据管理</summary><p>数据保存在当前浏览器，建议定期导出备份。</p><button id="clear-data" class="danger-button">清空所有本地数据</button></details>
       </section>
     </main>
-    <footer class="site-footer"><strong>每天留下一个可见成果。</strong><span>英语进阶计划 · 数据默认保存在当前浏览器</span></footer>
+    <footer class="site-footer"><strong>每天留下一个可见成果。</strong><span>英语进阶计划 · 数据默认保存在当前浏览器 · 插图来自 Open Doodles（CC0）</span></footer>
     <nav class="mobile-nav" aria-label="移动端导航"><button class="is-active" data-view="today">今天</button><button data-view="roadmap">计划</button><button data-view="materials">材料</button><button data-view="records">记录</button></nav>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="plan-data.js"></script><script src="app.js"></script>

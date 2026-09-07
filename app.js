@@ -2,28 +2,59 @@
   const { phases, weeks, materials } = window.LEARNING_PLAN;
   const storageKey = 'english-year-one-v1';
   const calendarDayIndex = (new Date().getDay() + 6) % 7;
-  const defaultState = { currentWeek: 1, selectedDay: calendarDayIndex, completedTasks: {}, taskNotes: {}, passedWeeks: [], logs: [], scores: [] };
+  const defaultState = { currentWeek: 1, selectedDay: calendarDayIndex, completedTasks: {}, taskNotes: {}, passedWeeks: [], logs: [], scores: [], customMaterials: [] };
   let state = loadState();
   let activeFilter = 0;
+  let roadmapPage = 1;
+  let historyPage = 1;
+  let printing = false;
+  let materialFilter = '全部';
+  const materialCategories = ['全部','听力','口语','阅读与语法','考试','影视'];
+  const materialTypes = ['阅读与语法','听力','听力','口语','阅读与语法','阅读与语法','考试','考试','影视'];
+  const scrollPositions = {};
+  let currentView = '';
   let timerSeconds = 25 * 60;
   let timerInitial = timerSeconds;
   let timerId = null;
   let expandedTaskKey = '';
+  let expandedDayPrefix = '';
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
-  const today = new Date().toISOString().slice(0, 10);
+  const localDate = new Date();
+  const today = `${localDate.getFullYear()}-${String(localDate.getMonth()+1).padStart(2,'0')}-${String(localDate.getDate()).padStart(2,'0')}`;
   $('#today-date').textContent = new Intl.DateTimeFormat('zh-CN', { month:'long', day:'numeric', weekday:'long' }).format(new Date());
   $('#log-date').value = today;
   $('#score-date').value = today;
 
   function loadState() {
-    try { return { ...defaultState, ...JSON.parse(localStorage.getItem(storageKey) || '{}') }; }
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      return { ...defaultState, ...saved, customMaterials: Array.isArray(saved.customMaterials) ? saved.customMaterials : [] };
+    }
     catch { return { ...defaultState }; }
   }
-  function saveState() { localStorage.setItem(storageKey, JSON.stringify(state)); renderDashboard(); renderRecords(); }
+  function saveState() { localStorage.setItem(storageKey, JSON.stringify(state)); renderDashboard(); renderMaterials(); renderRecords(); }
   function esc(value='') { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
   function toast(message) { const el=$('#toast'); el.textContent=message; el.classList.add('is-visible'); clearTimeout(el._timer); el._timer=setTimeout(()=>el.classList.remove('is-visible'),2400); }
+
+  // Lucide icons, ISC/MIT. License retained in ASSET-LICENSES.md.
+  const iconPaths = {
+    book: '<path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/>',
+    headphones: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
+    speech: '<path d="M8.8 20v-4.1l1.9.2a2.3 2.3 0 0 0 2.164-2.1V8.3A5.37 5.37 0 0 0 2 8.25c0 2.8.656 3.054 1 4.55a5.77 5.77 0 0 1 .029 2.758L2 20"/><path d="M19.8 17.8a7.5 7.5 0 0 0 .003-10.603M17 15a3.5 3.5 0 0 0-.025-4.975"/>'
+  };
+  function icon(name) { return `<svg class="skill-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconPaths[name] || iconPaths.book}</svg>`; }
+  function iconFor(text) { return /口语|对话|Voice|跟读|复述/.test(text) ? 'speech' : /听|BBC|VOA|影视/.test(text) ? 'headphones' : 'book'; }
+  function paginate(target, page, count, onChange) {
+    const pages = Math.max(1, Math.ceil(count / 8));
+    const numbers = Array.from({length:pages},(_,i)=>i+1).filter(n=>n===1 || n===pages || Math.abs(n-page)<=1);
+    const links = numbers.map((n,i)=>`${i && n-numbers[i-1]>1?'<span class="page-ellipsis">…</span>':''}<button class="page-number" data-page="${n}" ${n===page?'aria-current="page"':''} aria-label="第 ${n} 页">${n}</button>`).join('');
+    $$(target).forEach(nav => {
+      nav.innerHTML = `<span class="page-range" role="status">${count?`${(page-1)*8+1}–${Math.min(count,page*8)}`:'0'} / ${count} 项</span><div class="page-controls"><button class="secondary-button" data-page="${page-1}" ${page===1?'disabled':''}>上一页</button><div class="page-numbers">${links}</div><span class="compact-page">${page} / ${pages}</span><button class="secondary-button" data-page="${page+1}" ${page===pages?'disabled':''}>下一页</button></div>`;
+      nav.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', () => { const n=Number(button.dataset.page);onChange(n); document.querySelector(`${target.split(',')[0]} [data-page="${n}"][aria-current]`)?.focus({preventScroll:true}); }));
+    });
+  }
 
   function formatNumber(value) { return new Intl.NumberFormat('zh-CN').format(Number(value || 0)); }
   function formatSyncTime(value) {
@@ -77,7 +108,7 @@
     const task = (title, material, value, steps, evidence, resourceText=material, prompt='') => ({
       title, material, minutes:minutes(value), steps, evidence, resource:resourceFor(resourceText), prompt,
     });
-    const speakingPrompt = goal => `你是我的英语口语教练。我目前约为高 A1，正在进行第 ${week.week} 周“${week.title}”训练，重点是：${week.focus}。请围绕“${goal}”和我进行英文对话：一次只问一个问题；等我回答后再继续；不要立即打断纠错；对话结束后用中文列出 3 个最重要的错误、给出更自然的表达，并让我重新回答一次。`;
+    const speakingPrompt = goal => `你是我的英语口语教练。我正在进行第 ${week.week} 周“${week.title}”训练，计划阶段是${phases.find(p=>p.id===week.phase).name}，重点是：${week.focus}。请先根据我的回答判断实际水平，再调整难度。围绕“${goal}”和我进行英文对话：一次只问一个问题；等我回答后再继续；不要立即打断纠错；对话结束后用中文列出 3 个最重要的错误、给出更自然的表达，并让我重新回答一次。`;
     return [
       { name:'周一', theme:'进入本周主题', tasks:[
         task('Duolingo 基础练习','Duolingo：完成当前路径课程',20,['完成 1 个新单元或 2 个短课','错题立即重做，不追求刷经验值','抄下 5 个能用于本周主题的句子'],'课程完成；错题已订正；保存 5 个句子'),
@@ -138,11 +169,18 @@
   }
 
   function showView(name) {
+    if (currentView) scrollPositions[currentView] = window.scrollY;
     $$('.view').forEach(v => v.classList.toggle('is-active', v.id === `view-${name}`));
     $$('[data-view]').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
-    history.replaceState(null, '', `#${name}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    $$('.desktop-nav [data-view], .mobile-nav [data-view]').forEach(b => { if (b.dataset.view === name) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+    if(location.hash !== `#${name}`) history.pushState(null, '', `#${name}`);
+    currentView = name;
+    window.scrollTo({ top: scrollPositions[name] || 0, behavior: 'instant' });
+    const heading = document.querySelector(`#view-${name} h1`);
+    heading.setAttribute('tabindex','-1');
+    heading.focus({preventScroll:true});
   }
+  window.addEventListener('popstate', () => { const view=location.hash.slice(1); showView(['today','roadmap','materials','records'].includes(view)?view:'today'); });
   $$('[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
   $('[data-view-link]').addEventListener('click', e => { e.preventDefault(); showView('today'); });
   const hashView = location.hash.slice(1); if (['today','roadmap','materials','records'].includes(hashView)) showView(hashView);
@@ -150,6 +188,8 @@
   function renderDashboard() {
     const week = weeks[state.currentWeek - 1];
     const phase = phases.find(p => p.id === week.phase);
+    $('#journey-title').textContent = `第 ${week.week} 周 · ${phase.name}`;
+    $('#journey-copy').textContent = `已通过 ${state.passedWeeks.length} / 52 周验收。当前阶段：${phase.range}，下一站 ${phase.level}。`;
     const schedule = dailySchedule(week);
     const selectedDay = Math.min(6, Math.max(0, Number(state.selectedDay ?? calendarDayIndex)));
     const day = schedule[selectedDay];
@@ -166,7 +206,10 @@
     $$('[data-day]').forEach(button => button.addEventListener('click', () => { state.selectedDay=Number(button.dataset.day); saveState(); }));
     const keyPrefix = `w${week.week}-d${selectedDay}-t`;
     const firstIncompleteIndex = day.tasks.findIndex((_, i) => !state.completedTasks[`${keyPrefix}${i}`]);
-    if (!expandedTaskKey.startsWith(keyPrefix)) expandedTaskKey = `${keyPrefix}${firstIncompleteIndex < 0 ? 0 : firstIncompleteIndex}`;
+    if (expandedDayPrefix !== keyPrefix) {
+      expandedDayPrefix = keyPrefix;
+      expandedTaskKey = `${keyPrefix}${firstIncompleteIndex < 0 ? 0 : firstIncompleteIndex}`;
+    }
     $('#today-tasks').innerHTML = day.tasks.map((task, i) => {
       const taskKey = `${keyPrefix}${i}`;
       const checked = Boolean(state.completedTasks[taskKey]);
@@ -184,6 +227,10 @@
       </article>`;
     }).join('');
     $$('[data-expand-task]').forEach(button => button.addEventListener('click', () => { expandedTaskKey = expandedTaskKey === button.dataset.expandTask ? '' : button.dataset.expandTask; renderDashboard(); }));
+    $$('#today-tasks .task-index').forEach((badge, i) => {
+      badge.innerHTML = icon(iconFor(day.tasks[i].title));
+      badge.setAttribute('aria-label', `任务 ${i+1}`);
+    });
     $$('[data-task-key]').forEach(input => input.addEventListener('change', e => {
       const taskKey = e.target.dataset.taskKey;
       state.completedTasks[taskKey] = e.target.checked;
@@ -192,6 +239,7 @@
         expandedTaskKey = taskIndex + 1 < day.tasks.length ? `${keyPrefix}${taskIndex + 1}` : taskKey;
       }
       saveState();
+      if(e.target.checked) toast(dayIsComplete(week.week, selectedDay, schedule) ? '今天的任务都完成了！记得留下学习成果。' : '已完成一项，继续下一段练习');
     }));
     $$('[data-task-note]').forEach(input => input.addEventListener('change', e => { state.taskNotes[e.target.dataset.taskNote]=e.target.value.trim(); localStorage.setItem(storageKey, JSON.stringify(state)); toast('任务成果已保存'); }));
     $$('[data-copy-prompt]').forEach(button => button.addEventListener('click', async () => {
@@ -219,7 +267,9 @@
     const totalMinutes = state.logs.reduce((sum, l) => sum + Number(l.minutes || 0), 0);
     const totalHours = totalMinutes / 60;
     $('#hours-copy').textContent = `${totalHours.toFixed(1)} / 650 小时`;
-    $('#hours-progress').style.width = `${Math.min(100, totalHours/650*100)}%`;
+    $('#hours-progress').style.width = `${Math.max(0, Math.min(100, totalHours/650*100))}%`;
+    $('.progress-track').setAttribute('aria-valuenow', Math.max(0, Math.min(650, totalHours)));
+    $('.progress-track').setAttribute('aria-valuetext', `已学习 ${totalHours.toFixed(1)} 小时，目标 650 小时`);
     $('#next-milestone').textContent = `下一里程碑 ${phase.level} · ${phase.milestone}`;
   }
 
@@ -236,17 +286,79 @@
 
   function renderRoadmap() {
     $('#week-select').innerHTML = weeks.map(w => `<option value="${w.week}" ${w.week===state.currentWeek?'selected':''}>第 ${w.week} 周 · ${esc(w.title)}</option>`).join('');
-    $('#phase-filters').innerHTML = [{id:0,name:'全部阶段'},...phases].map(p=>`<button class="filter-button ${p.id===activeFilter?'is-active':''}" data-phase="${p.id}">${esc(p.name)}</button>`).join('');
-    $$('.filter-button').forEach(b=>b.addEventListener('click',()=>{ activeFilter=Number(b.dataset.phase); renderRoadmap(); }));
-    const visible = activeFilter ? weeks.filter(w=>w.phase===activeFilter) : weeks;
+    $('#phase-filters').innerHTML = [{id:0,name:'全部阶段'},...phases].map(p=>`<button class="filter-button ${p.id===activeFilter?'is-active':''}" data-phase="${p.id}" aria-pressed="${p.id===activeFilter}">${esc(p.name)}</button>`).join('');
+    $$('#phase-filters .filter-button').forEach(b=>b.addEventListener('click',()=>{ activeFilter=Number(b.dataset.phase); roadmapPage=1; renderRoadmap(); }));
+    const filtered = !printing && activeFilter ? weeks.filter(w=>w.phase===activeFilter) : weeks;
+    const visible = printing ? weeks : filtered.slice((roadmapPage-1)*8, roadmapPage*8);
+    paginate('#roadmap-pagination-top, #roadmap-pagination', roadmapPage, filtered.length, page => { roadmapPage=page; renderRoadmap(); $('#roadmap-pagination-top').scrollIntoView({block:'start'}); });
     $('#roadmap-list').innerHTML = visible.map(w => `<article id="week-${w.week}" class="week-card ${state.passedWeeks.includes(w.week)?'is-passed':''}"><div class="week-number"><small>Week</small><strong>${String(w.week).padStart(2,'0')}</strong></div><div class="week-main"><h3>${esc(w.title)}</h3><p>${esc(w.focus)}</p></div><div class="week-goal"><strong>验收标准</strong><p>${esc(w.check)}</p></div><div class="week-hours"><strong>${w.hours}h</strong><small>建议时长</small><button class="week-pass" data-pass-week="${w.week}">${state.passedWeeks.includes(w.week)?'已通过':'标记通过'}</button></div></article>`).join('');
     $$('[data-pass-week]').forEach(b=>b.addEventListener('click',()=>{ const n=Number(b.dataset.passWeek); state.passedWeeks=state.passedWeeks.includes(n)?state.passedWeeks.filter(x=>x!==n):[...state.passedWeeks,n].sort((a,b)=>a-b); saveState(); renderRoadmap(); }));
+    $$('#roadmap-list .week-card').forEach(card => {
+      const n = Number(card.id.replace('week-',''));
+      card.classList.toggle('is-current-week', n === state.currentWeek);
+      const button = document.createElement('button');
+      button.className = 'secondary-button';
+      button.textContent = n === state.currentWeek ? '继续本周' : '查看每日安排';
+      button.addEventListener('click', () => { state.currentWeek=n; saveState(); renderRoadmap(); showView('today'); });
+      card.querySelector('.week-hours').append(button);
+    });
   }
   $('#week-select').addEventListener('change', e => { state.currentWeek=Number(e.target.value); saveState(); renderRoadmap(); showView('today'); toast(`已切换到第 ${state.currentWeek} 周`); });
+  $('#locate-week').addEventListener('click', () => { activeFilter=0; roadmapPage=Math.floor((state.currentWeek-1)/8)+1;renderRoadmap(); const card=$(`#week-${state.currentWeek}`);card.scrollIntoView({block:'center',behavior:'smooth'});card.querySelector('.week-hours button:last-child').focus({preventScroll:true}); });
 
   function renderMaterials() {
-    $('#materials-grid').innerHTML = materials.map((m,i)=>`<article class="material-card"><span class="material-index">${String(i+1).padStart(2,'0')}</span><h2>${esc(m.name)}</h2><p><strong>${esc(m.use)}</strong><br>${esc(m.phase)}</p><ul>${m.points.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><a href="${esc(m.url)}" target="_blank" rel="noopener noreferrer">打开学习材料 ↗</a></article>`).join('');
+    const query = $('#material-search').value.trim().toLowerCase();
+    $('#material-filters').innerHTML = materialCategories.map(c=>`<button class="filter-button" data-material-type="${c}" aria-pressed="${c===materialFilter}">${c}</button>`).join('');
+    $$('[data-material-type]').forEach(b=>b.addEventListener('click',()=>{materialFilter=b.dataset.materialType;renderMaterials(); $(`[data-material-type="${materialFilter}"]`).focus({preventScroll:true});}));
+    const library = [
+      ...materials.map((material,index) => ({ ...material, category: materialTypes[index], custom: false })),
+      ...state.customMaterials.map(material => ({ ...material, custom: true })),
+    ];
+    const visible = library.filter(material => (materialFilter==='全部' || material.category===materialFilter) && [material.name,material.use,material.phase,...material.points].join(' ').toLowerCase().includes(query));
+    $('#material-results').textContent = `${materialFilter} · ${visible.length} 项材料${state.customMaterials.length ? ` · 自定义 ${state.customMaterials.length} 项` : ''}`;
+    $('#materials-grid').innerHTML = visible.map(material=>`<article class="material-card ${material.custom?'is-custom-material':''}"><span class="material-index">${icon(iconFor(material.name+material.use))}</span><div class="material-card-heading"><h2>${esc(material.name)}</h2>${material.custom?'<span class="tag">我的材料</span>':''}</div><p><strong>${esc(material.use)}</strong><br>${esc(material.phase)}</p><ul>${material.points.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><div class="material-card-actions"><a href="${esc(material.url)}" target="_blank" rel="noopener noreferrer">打开学习材料 ↗</a>${material.custom?`<button class="text-button material-remove" data-remove-material="${esc(material.id)}">移除</button>`:''}</div></article>`).join('') || '<p class="empty-state">没有匹配的材料，试试平台名称、口语或阅读。</p>';
+    $$('[data-remove-material]').forEach(button => button.addEventListener('click', () => {
+      const item = state.customMaterials.find(material => material.id === button.dataset.removeMaterial);
+      if (!item || !confirm(`移除“${item.name}”吗？这不会影响你的学习记录。`)) return;
+      state.customMaterials = state.customMaterials.filter(material => material.id !== item.id);
+      saveState();
+      toast('已从材料库移除');
+    }));
   }
+  $('#material-search').addEventListener('input', renderMaterials);
+  $('#material-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const name = $('#material-name').value.trim();
+    const use = $('#material-use').value.trim();
+    const url = $('#material-url').value.trim();
+    let normalizedUrl;
+    try {
+      const parsed = new URL(url);
+      if (!['https:', 'http:'].includes(parsed.protocol)) throw new Error('unsupported protocol');
+      normalizedUrl = parsed.href;
+    } catch {
+      $('#material-url').setCustomValidity('请输入以 http:// 或 https:// 开头的有效链接。');
+      $('#material-url').reportValidity();
+      return;
+    }
+    $('#material-url').setCustomValidity('');
+    const points = $('#material-notes').value.split('\n').map(item => item.trim()).filter(Boolean).slice(0, 5);
+    state.customMaterials.unshift({
+      id: `material-${Date.now()}`,
+      name,
+      use,
+      phase: $('#material-phase').value.trim() || '全年',
+      category: $('#material-category').value,
+      url: normalizedUrl,
+      points: points.length ? points : ['在学习记录中留下材料名称、有效时长和完成证据'],
+    });
+    materialFilter = '全部';
+    event.target.reset();
+    $('#material-phase').value = '全年';
+    $('#add-material-panel').open = false;
+    saveState();
+    toast(`已加入“${name}”`);
+  });
 
   function renderRecords() {
     const total = state.logs.reduce((sum,l)=>sum+Number(l.minutes||0),0);
@@ -257,20 +369,32 @@
     $('#record-speaking-minutes').textContent = speaking;
     $('#record-ielts').textContent = latestIELTS?.total || '—';
     $('#record-duolingo').textContent = latestDuo?.total || '27';
-    const history = [
+    const allHistory = [
       ...state.logs.map((x,i)=>({...x,kind:'学习',index:i})),
       ...state.scores.map((x,i)=>({...x,kind:'测评',index:i,activity:x.type,minutes:x.total,evidence:x.detail,note:x.note}))
-    ].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
+    ].filter(h=>$('#history-filter').value==='all'||h.kind===$('#history-filter').value).sort((a,b)=>b.date.localeCompare(a.date));
+    historyPage = Math.min(historyPage, Math.max(1, Math.ceil(allHistory.length/8)));
+    const history = allHistory.slice((historyPage-1)*8, historyPage*8);
+    paginate('#history-pagination', historyPage, allHistory.length, page => { historyPage=page; renderRecords(); $('#history-list').scrollIntoView({block:'start'}); });
+    $('#history-pagination').hidden = !allHistory.length;
     $('#history-list').innerHTML = history.length ? history.map(h=>`<article class="history-item"><small>${esc(h.date)}</small><small>${esc(h.kind)} · ${esc(h.skill||h.type||'')}</small><div><strong>${esc(h.activity)}</strong><small>${esc(h.evidence||'')}${h.note?` · ${esc(h.note)}`:''}</small></div><strong>${esc(h.minutes)}${h.kind==='学习'?' 分钟':''}</strong><button data-delete-kind="${h.kind}" data-delete-index="${h.index}" aria-label="删除记录">×</button></article>`).join('') : '<div class="empty-state">还没有记录。完成第一个 25 分钟学习块后，把材料、时间和结果记在这里。</div>';
+    if(!history.length) $('#history-list').innerHTML = `<div class="empty-state illustrated-empty"><img src="assets/plant.svg" width="160" height="120" alt="" aria-hidden="true"><div><h3>${state.logs.length+state.scores.length?'这个分类还没有记录':'让每一次练习，都留下成长的痕迹'}</h3><p>写下学了什么、用了多久、完成了什么，回头就能看见自己的进步。</p><button class="primary-button" id="empty-add-record">记录一次练习</button></div></div>`;
+    $('#empty-add-record')?.addEventListener('click',()=>openForm('log-form'));
     $$('[data-delete-kind]').forEach(b=>b.addEventListener('click',()=>{ const collection=b.dataset.deleteKind==='学习'?'logs':'scores'; state[collection].splice(Number(b.dataset.deleteIndex),1); saveState(); toast('记录已删除'); }));
   }
+  function openForm(id) { const form=$(`#${id}`);form.closest('details').open=true;form.closest('details').scrollIntoView({block:'start',behavior:'smooth'});form.querySelector('input').focus({preventScroll:true}); }
+  $$('[data-open-form]').forEach(b=>b.addEventListener('click',()=>openForm(b.dataset.openForm)));
+  $('#history-filter').addEventListener('change',()=>{historyPage=1;renderRecords();});
 
-  $('#log-form').addEventListener('submit', e => { e.preventDefault(); state.logs.push({date:$('#log-date').value,skill:$('#log-skill').value,minutes:Number($('#log-minutes').value),activity:$('#log-activity').value.trim(),evidence:$('#log-evidence').value.trim(),note:$('#log-note').value.trim(),week:state.currentWeek}); saveState(); e.target.reset(); $('#log-date').value=today; $('#log-minutes').value=25; toast('学习记录已保存'); });
-  $('#score-form').addEventListener('submit', e => { e.preventDefault(); state.scores.push({date:$('#score-date').value,type:$('#score-type').value,total:$('#score-total').value.trim(),detail:$('#score-detail').value.trim(),note:$('#score-note').value.trim()}); saveState(); e.target.reset(); $('#score-date').value=today; toast('测评成绩已保存'); });
+  function finishEntry(form) { historyPage=1;$('#history-filter').value='all';saveState();form.reset();form.closest('details').open=false;$('.history-section').scrollIntoView({block:'start',behavior:'smooth'}); }
+  $('#log-form').addEventListener('submit', e => { e.preventDefault(); state.logs.push({date:$('#log-date').value,skill:$('#log-skill').value,minutes:Number($('#log-minutes').value),activity:$('#log-activity').value.trim(),evidence:$('#log-evidence').value.trim(),note:$('#log-note').value.trim(),week:state.currentWeek}); finishEntry(e.target); $('#log-date').value=today; $('#log-minutes').value=25; toast('学习记录已保存'); });
+  $('#score-form').addEventListener('submit', e => { e.preventDefault(); state.scores.push({date:$('#score-date').value,type:$('#score-type').value,total:$('#score-total').value.trim(),detail:$('#score-detail').value.trim(),note:$('#score-note').value.trim()}); finishEntry(e.target); $('#score-date').value=today; toast('测评成绩已保存'); });
   $('#export-button').addEventListener('click',()=>{ const blob=new Blob([JSON.stringify({...state,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`english-learning-backup-${today}.json`;a.click();URL.revokeObjectURL(a.href);toast('备份已导出'); });
   $('#import-input').addEventListener('change',async e=>{ const file=e.target.files?.[0]; if(!file)return; try{ const parsed=JSON.parse(await file.text()); state={...defaultState,...parsed};saveState();renderRoadmap();toast('备份已恢复');}catch{toast('无法读取这个备份文件');} e.target.value=''; });
   $('#clear-data').addEventListener('click',()=>{ if(confirm('确定清空所有本地学习记录和勾选状态吗？请先导出备份。')){state={...defaultState};saveState();renderRoadmap();toast('本地数据已清空');} });
   $('#print-button').addEventListener('click',()=>window.print());
+  window.addEventListener('beforeprint', () => { printing=true; renderRoadmap(); });
+  window.addEventListener('afterprint', () => { printing=false; renderRoadmap(); });
 
   function updateTimer(){ const m=Math.floor(timerSeconds/60);const s=timerSeconds%60;$('#timer-display').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
   $('#timer-toggle').addEventListener('click',()=>{ if(timerId){clearInterval(timerId);timerId=null;$('#timer-toggle').textContent='继续';return;} $('#timer-toggle').textContent='暂停';timerId=setInterval(()=>{timerSeconds=Math.max(0,timerSeconds-1);updateTimer();if(timerSeconds===0){clearInterval(timerId);timerId=null;$('#timer-toggle').textContent='开始';toast('25 分钟专注完成，请记录成果');}},1000); });
@@ -278,4 +402,7 @@
   $('#timer-log').addEventListener('click',()=>{const used=Math.max(0,Math.round((timerInitial-timerSeconds)/60));if(!used){toast('先开始计时，完成后再记录');return;} state.logs.push({date:today,skill:$('#timer-activity').value.replace('精听','').replace('练习',''),minutes:used,activity:$('#timer-activity').value,evidence:'专注计时器',note:'',week:state.currentWeek});saveState();toast(`已记录 ${used} 分钟`);$('#timer-reset').click();});
 
   renderDashboard(); renderRoadmap(); renderMaterials(); renderRecords(); loadDuolingoProfile();
+  showView(['today','roadmap','materials','records'].includes(hashView) ? hashView : 'today');
+  $('.timer-card h2').insertAdjacentHTML('beforebegin', `<span class="section-symbol">${icon('headphones')}</span>`);
+  $('.method-section h2').insertAdjacentHTML('beforebegin', `<span class="section-symbol">${icon('speech')}</span>`);
 })();

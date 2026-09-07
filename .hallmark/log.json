@@ -1,6 +1,13 @@
 [
   {
     "date": "2026-09-07",
+    "macrostructure": "Split Studio",
+    "theme": "custom Spring Classroom",
+    "enrichment": "Open Doodles CC0 illustration",
+    "brief": "Fresh learning dashboard preview with playful progress surfaces and collision-free page flow"
+  },
+  {
+    "date": "2026-09-07",
     "macrostructure": "Feature Stack",
     "theme": "Garden",
     "enrichment": "none",
