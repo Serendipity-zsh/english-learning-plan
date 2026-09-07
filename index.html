@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#18333b" />
+    <meta name="description" content="从高 A1 到雅思 6.5 的 52 周英语学习与进度记录计划" />
+    <meta property="og:title" content="英语进阶计划" />
+    <meta property="og:description" content="一套可执行、可记录、可验收的 52 周英语学习计划" />
+    <title>英语进阶计划</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#today" data-view-link="today" aria-label="英语进阶计划首页">
+        <span class="brand-mark">EN</span>
+        <span><small>English Year One</small><strong>英语进阶计划</strong></span>
+      </a>
+      <nav class="desktop-nav" aria-label="主要导航">
+        <button class="nav-link is-active" data-view="today">今天</button>
+        <button class="nav-link" data-view="roadmap">52周计划</button>
+        <button class="nav-link" data-view="materials">学习材料</button>
+        <button class="nav-link" data-view="records">学习记录</button>
+      </nav>
+      <div class="header-actions">
+        <button id="print-button" class="icon-button" title="打印或导出 PDF" aria-label="打印或导出 PDF">打印</button>
+        <span id="header-week" class="week-pill">第 1 周</span>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section id="view-today" class="view is-active" aria-labelledby="today-title">
+        <div class="dashboard-grid">
+          <div class="today-panel">
+            <p class="eyebrow">本周行动</p>
+            <h1 id="today-title">从今天的<br />专注练习开始</h1>
+            <p id="week-summary" class="lede"></p>
+            <div id="today-tasks" class="task-list"></div>
+          </div>
+          <aside class="goal-card">
+            <div class="goal-label"><span>年度目标</span><span class="target-icon">◎</span></div>
+            <p class="goal-score">6.5</p><p class="goal-caption">IELTS target</p>
+            <div class="progress-copy"><span>年度有效学习</span><span id="hours-copy">0 / 650 小时</span></div>
+            <div class="progress-track"><span id="hours-progress"></span></div>
+            <div class="goal-stats">
+              <div><span>◷</span><strong id="week-hours">0h</strong><small>本周已记录</small></div>
+              <div><span>◫</span><strong id="completed-weeks">0</strong><small>通过周验收</small></div>
+            </div>
+            <p id="next-milestone" class="milestone"></p>
+          </aside>
+        </div>
+
+        <div class="section-divider"></div>
+        <section class="working-grid" aria-labelledby="focus-title">
+          <div>
+            <div class="section-heading">
+              <div><p class="eyebrow">本周重点</p><h2 id="focus-title"></h2></div>
+              <button class="text-button" data-view="roadmap">查看完整路线 →</button>
+            </div>
+            <div id="week-detail" class="focus-card"></div>
+          </div>
+          <aside class="timer-card" aria-labelledby="timer-title">
+            <p class="eyebrow">专注计时</p><h2 id="timer-title">有效学习计时器</h2>
+            <p class="timer-help">只记录有明确任务、专注过程和可见产物的时间。</p>
+            <p id="timer-display" class="timer-display">25:00</p>
+            <div class="timer-actions"><button id="timer-toggle" class="primary-button">开始</button><button id="timer-reset" class="secondary-button">重置</button></div>
+            <label class="field-label" for="timer-activity">本次活动</label>
+            <select id="timer-activity" class="field-control"><option>听力精听</option><option>口语练习</option><option>阅读</option><option>写作</option><option>语法词汇</option><option>模考复盘</option></select>
+            <button id="timer-log" class="text-button full-width">将已用时间计入记录</button>
+          </aside>
+        </section>
+
+        <section class="stage-strip" aria-label="年度阶段">
+          <article><span>01</span><small>第 1–12 周</small><strong>高 A1 到 A2</strong><em>建立基础与输出习惯</em></article>
+          <article><span>02</span><small>第 13–24 周</small><strong>A2 到 B1</strong><em>进入真实交流</em></article>
+          <article><span>03</span><small>第 25–39 周</small><strong>B1 到 B2</strong><em>强化工作英语</em></article>
+          <article><span>04</span><small>第 40–52 周</small><strong>雅思与求职</strong><em>稳定达到 6.5</em></article>
+        </section>
+      </section>
+
+      <section id="view-roadmap" class="view" aria-labelledby="roadmap-title">
+        <div class="view-heading">
+          <div><p class="eyebrow">完整路线</p><h1 id="roadmap-title">52周学习计划</h1></div>
+          <div class="week-jump"><label for="week-select">跳转到</label><select id="week-select"></select></div>
+        </div>
+        <div id="phase-filters" class="filter-row" aria-label="阶段筛选"></div>
+        <div id="roadmap-list" class="roadmap-list"></div>
+      </section>
+
+      <section id="view-materials" class="view" aria-labelledby="materials-title">
+        <div class="view-heading">
+          <div><p class="eyebrow">固定工具栈</p><h1 id="materials-title">全年学习材料</h1></div>
+          <p class="view-intro">尽量使用同一组平台。每项材料都对应明确训练动作，避免只收藏不练习。</p>
+        </div>
+        <div id="materials-grid" class="materials-grid"></div>
+        <section class="method-section">
+          <p class="eyebrow">训练方法</p><h2>同一份材料完成输入和输出闭环</h2>
+          <div class="method-grid">
+            <article><span>1</span><h3>先听或先读</h3><p>第一次不查词，先确认人物、主题、结论和自己能理解的比例。</p></article>
+            <article><span>2</span><h3>定位障碍</h3><p>对照英文文本找出生词、连读、语法结构和理解错误。</p></article>
+            <article><span>3</span><h3>跟读复述</h3><p>跟读关键段落，再脱离原文复述。口语材料必须留下录音。</p></article>
+            <article><span>4</span><h3>迁移使用</h3><p>把 5–10 个表达用到自己的工作、邮件、项目介绍或雅思回答里。</p></article>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-records" class="view" aria-labelledby="records-title">
+        <div class="view-heading">
+          <div><p class="eyebrow">可审计进度</p><h1 id="records-title">学习记录</h1></div>
+          <div class="record-actions"><button id="export-button" class="secondary-button">导出备份</button><label class="secondary-button file-button">导入备份<input id="import-input" type="file" accept="application/json" /></label></div>
+        </div>
+        <div class="record-summary">
+          <article><small>累计有效学习</small><strong id="record-total-hours">0</strong><span>小时</span></article>
+          <article><small>累计实际开口</small><strong id="record-speaking-minutes">0</strong><span>分钟</span></article>
+          <article><small>最近 IELTS 模考</small><strong id="record-ielts">—</strong><span>总分</span></article>
+          <article><small>当前 Duolingo</small><strong id="record-duolingo">27</strong><span>分</span></article>
+        </div>
+        <div class="records-layout">
+          <section class="form-card" aria-labelledby="log-form-title">
+            <h2 id="log-form-title">添加学习记录</h2>
+            <form id="log-form" class="stacked-form">
+              <label>日期<input id="log-date" type="date" required /></label>
+              <label>技能<select id="log-skill"><option>听力</option><option>口语</option><option>阅读</option><option>写作</option><option>语法词汇</option><option>模考复盘</option></select></label>
+              <label>有效分钟<input id="log-minutes" type="number" min="1" max="480" value="25" required /></label>
+              <label>材料或任务<input id="log-activity" type="text" placeholder="例如 VOA Lesson 3 精听" required /></label>
+              <label>完成证据<input id="log-evidence" type="text" placeholder="例如 测验 8/10 或录音 2:40" required /></label>
+              <label>主要问题<input id="log-note" type="text" placeholder="例如 连读、过去时、冠词" /></label>
+              <button class="primary-button" type="submit">保存记录</button>
+            </form>
+          </section>
+          <section class="form-card" aria-labelledby="score-form-title">
+            <h2 id="score-form-title">添加测评成绩</h2>
+            <form id="score-form" class="stacked-form">
+              <label>日期<input id="score-date" type="date" required /></label>
+              <label>测评类型<select id="score-type"><option>IELTS 模考</option><option>Duolingo</option><option>阶段验收</option></select></label>
+              <label>总分或结果<input id="score-total" type="text" placeholder="例如 5.5 或 通过" required /></label>
+              <label>分项成绩<input id="score-detail" type="text" placeholder="例如 L6 R5.5 W5 S5" /></label>
+              <label>下阶段重点<input id="score-note" type="text" placeholder="例如 写作论证和口语流利度" /></label>
+              <button class="primary-button" type="submit">保存成绩</button>
+            </form>
+          </section>
+        </div>
+        <section class="history-section">
+          <div class="section-heading"><div><p class="eyebrow">最近记录</p><h2>学习证据</h2></div><button id="clear-data" class="danger-button">清空所有本地数据</button></div>
+          <div id="history-list" class="history-list"></div>
+        </section>
+        <section class="counting-rules">
+          <div><p class="eyebrow">计时标准</p><h2>什么算有效学习</h2></div>
+          <div class="rule-columns">
+            <article><h3>可以计入</h3><ul><li>专注完成课程和练习</li><li>精听、对照文本、重听</li><li>真实开口、跟读、录音和复述</li><li>阅读后完成摘要或问题</li><li>写作、批改、重写和错题复盘</li></ul></article>
+            <article><h3>不计入</h3><ul><li>后台播放或边刷手机边看</li><li>只看中文字幕的影视内容</li><li>寻找资料和整理文件</li><li>重复完成已经完全掌握的简单题</li><li>没有任务、产物或反馈的浏览</li></ul></article>
+          </div>
+        </section>
+      </section>
+    </main>
+    <nav class="mobile-nav" aria-label="移动端导航"><button class="is-active" data-view="today">今天</button><button data-view="roadmap">计划</button><button data-view="materials">材料</button><button data-view="records">记录</button></nav>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="plan-data.js"></script><script src="app.js"></script>
+  </body>
+</html>
