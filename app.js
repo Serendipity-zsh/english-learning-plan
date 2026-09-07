@@ -1,7 +1,8 @@
 (() => {
   const { phases, weeks, materials } = window.LEARNING_PLAN;
   const storageKey = 'english-year-one-v1';
-  const defaultState = { currentWeek: 1, completedTasks: {}, passedWeeks: [], logs: [], scores: [] };
+  const calendarDayIndex = (new Date().getDay() + 6) % 7;
+  const defaultState = { currentWeek: 1, selectedDay: calendarDayIndex, completedTasks: {}, passedWeeks: [], logs: [], scores: [] };
   let state = loadState();
   let activeFilter = 0;
   let timerSeconds = 25 * 60;
@@ -21,7 +22,25 @@
   function saveState() { localStorage.setItem(storageKey, JSON.stringify(state)); renderDashboard(); renderRecords(); }
   function esc(value='') { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
   function toast(message) { const el=$('#toast'); el.textContent=message; el.classList.add('is-visible'); clearTimeout(el._timer); el._timer=setTimeout(()=>el.classList.remove('is-visible'),2400); }
-  function phaseForWeek(week) { return phases.find(p => week >= Number(p.range.match(/\d+/)[0]) && week <= Number(p.range.match(/\d+(?= 周$)/)?.[0] || 52)) || phases.find(p => p.id === weeks[week-1].phase); }
+  function dailySchedule(week) {
+    const mainMaterial = week.materials.split('；')[0];
+    const scale = week.hours / 12.5;
+    const minutes = value => Math.max(5, Math.round(value * scale / 5) * 5);
+    const task = (title, detail, value) => ({ title, detail: `${detail} · ${minutes(value)} 分钟`, minutes: minutes(value) });
+    return [
+      { name:'周一', theme:'进入本周主题', tasks:[task('Duolingo 基础练习','复习并学习本周句型',20),task('主材料学习',mainMaterial,35),task('关键句跟读','选择 5 句录音对比',15),task('语法整理',week.focus,20)] },
+      { name:'周二', theme:'阅读和短写作', tasks:[task('Duolingo 基础练习','保持每日连续学习',20),task('主材料第二轮',`${mainMaterial} 听读结合`,30),task('英文阅读','划出主旨和 5 个表达',20),task('短写作','用本周表达完成一段文字',20)] },
+      { name:'周三', theme:'听力和口语', tasks:[task('Duolingo 基础练习','复习薄弱题目',20),task('精听训练','听写关键句并对照文本',30),task('ChatGPT 语音','围绕本周主题连续对话',25),task('口语复盘','记录 3 个错误并重说',15)] },
+      { name:'周四', theme:'准确度训练', tasks:[task('Duolingo 基础练习','巩固基础句型',20),task('主材料第三轮',`${mainMaterial} 复述和测验`,30),task('语法练习',week.focus,20),task('修改写作','根据反馈完成一次重写',20)] },
+      { name:'周五', theme:'迁移到真实表达', tasks:[task('Duolingo 基础练习','完成本周 App 目标',20),task('本周材料复习',week.materials,30),task('口语输出',`围绕“${week.title}”录音`,25),task('表达复习','主动使用 10 个本周表达',15)] },
+      { name:'周六', theme:'长任务和作品', tasks:[task('影视或长材料精听','只用英文字幕，精学 5–10 分钟',45),task('跟读和表达整理','保存 10 个可复用表达',25),task('本周写作',week.output,45),task('脱稿复述','保存音频或会话文字',35)] },
+      { name:'周日', theme:'测试和周复盘', tasks:[task('本周测试',week.check,60),task('工作英语模拟','站会、会议、项目介绍或面试',30),task('错题复盘','整理最高频的 3 类错误',30),task('安排下周','记录成绩、证据和下周重点',30)] },
+    ];
+  }
+
+  function dayIsComplete(weekNumber, dayIndex, schedule) {
+    return schedule[dayIndex].tasks.every((_, taskIndex) => state.completedTasks[`w${weekNumber}-d${dayIndex}-t${taskIndex}`]);
+  }
 
   function showView(name) {
     $$('.view').forEach(v => v.classList.toggle('is-active', v.id === `view-${name}`));
@@ -36,23 +55,37 @@
   function renderDashboard() {
     const week = weeks[state.currentWeek - 1];
     const phase = phases.find(p => p.id === week.phase);
+    const schedule = dailySchedule(week);
+    const selectedDay = Math.min(6, Math.max(0, Number(state.selectedDay ?? calendarDayIndex)));
+    const day = schedule[selectedDay];
     $('#header-week').textContent = `第 ${week.week} 周`;
-    $('#week-summary').textContent = `${phase.name}阶段。本周聚焦${week.focus}，建议完成 ${week.hours} 小时有效学习。`;
+    $('#today-title').innerHTML = selectedDay === calendarDayIndex
+      ? '今天的<br>专注练习'
+      : `${day.name}的<br>学习计划`;
+    $('#week-summary').textContent = `${phase.name}阶段。本周聚焦${week.focus}。${day.name}的重点是${day.theme}，计划约 ${day.tasks.reduce((sum, item) => sum + item.minutes, 0)} 分钟。`;
     $('#focus-title').textContent = week.title;
-    const keyPrefix = `w${week.week}-`;
-    $('#today-tasks').innerHTML = week.tasks.map((task, i) => {
+    $('#day-switcher').innerHTML = schedule.map((item, dayIndex) => {
+      const done = dayIsComplete(week.week, dayIndex, schedule);
+      return `<button class="day-button ${dayIndex===selectedDay?'is-active':''} ${done?'is-done':''}" data-day="${dayIndex}"><span>${item.name}</span><small>${dayIndex===calendarDayIndex?'今天':done?'已完成':`${item.tasks.reduce((sum,t)=>sum+t.minutes,0)} 分`}</small></button>`;
+    }).join('');
+    $$('[data-day]').forEach(button => button.addEventListener('click', () => { state.selectedDay=Number(button.dataset.day); saveState(); }));
+    const keyPrefix = `w${week.week}-d${selectedDay}-t`;
+    $('#today-tasks').innerHTML = day.tasks.map((task, i) => {
       const checked = Boolean(state.completedTasks[`${keyPrefix}${i}`]);
       return `<label class="task-row ${checked?'is-done':''}"><input type="checkbox" data-task-key="${keyPrefix}${i}" ${checked?'checked':''} aria-label="完成 ${esc(task.title)}"><span><strong>${esc(task.title)}</strong><small>${esc(task.detail)}</small></span></label>`;
     }).join('');
     $$('[data-task-key]').forEach(input => input.addEventListener('change', e => { state.completedTasks[e.target.dataset.taskKey]=e.target.checked; saveState(); }));
+    const selectedCompleted = day.tasks.filter((_, taskIndex) => state.completedTasks[`${keyPrefix}${taskIndex}`]).length;
+    const completedDays = schedule.filter((_, dayIndex) => dayIsComplete(week.week, dayIndex, schedule)).length;
+    $('#selected-day-target').textContent = `${day.name} · ${day.theme}`;
+    $('#selected-day-progress').textContent = `${selectedCompleted} / ${day.tasks.length} 项`;
+    $('#today-completed').textContent = `${selectedCompleted}/${day.tasks.length}`;
+    $('#checked-days').textContent = `${completedDays}/7`;
     $('#week-detail').innerHTML = `<div class="focus-meta"><span class="tag">${esc(phase.range)}</span><span class="tag">目标 ${esc(phase.level)}</span><span class="tag">建议 ${week.hours} 小时</span></div><h3>${esc(week.focus)}</h3><p><strong>使用材料：</strong>${esc(week.materials)}</p><div class="focus-columns"><div><h4>本周产物</h4><ul><li>${esc(week.output)}</li><li>至少 2 次保留录音或文字证据</li></ul></div><div><h4>通过标准</h4><ul><li>${esc(week.check)}</li><li>完成学习记录和三类高频错误复盘</li></ul></div></div>`;
     const totalMinutes = state.logs.reduce((sum, l) => sum + Number(l.minutes || 0), 0);
-    const thisWeekMinutes = state.logs.filter(l => Number(l.week || state.currentWeek) === state.currentWeek).reduce((sum,l)=>sum+Number(l.minutes||0),0);
     const totalHours = totalMinutes / 60;
     $('#hours-copy').textContent = `${totalHours.toFixed(1)} / 650 小时`;
     $('#hours-progress').style.width = `${Math.min(100, totalHours/650*100)}%`;
-    $('#week-hours').textContent = `${(thisWeekMinutes/60).toFixed(1)}h`;
-    $('#completed-weeks').textContent = state.passedWeeks.length;
     $('#next-milestone').textContent = `下一里程碑 ${phase.level} · ${phase.milestone}`;
   }
 

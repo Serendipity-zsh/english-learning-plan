@@ -32,9 +32,11 @@
       <section id="view-today" class="view is-active" aria-labelledby="today-title">
         <div class="dashboard-grid">
           <div class="today-panel">
-            <p class="eyebrow">本周行动</p>
-            <h1 id="today-title">从今天的<br />专注练习开始</h1>
+            <p class="eyebrow">每日打卡</p>
+            <h1 id="today-title">今天的<br />专注练习</h1>
             <p id="week-summary" class="lede"></p>
+            <div id="day-switcher" class="day-switcher" aria-label="选择星期"></div>
+            <div class="daily-progress-copy"><span id="selected-day-target">今日计划</span><span id="selected-day-progress">0 / 4 项</span></div>
             <div id="today-tasks" class="task-list"></div>
           </div>
           <aside class="goal-card">
@@ -43,8 +45,8 @@
             <div class="progress-copy"><span>年度有效学习</span><span id="hours-copy">0 / 650 小时</span></div>
             <div class="progress-track"><span id="hours-progress"></span></div>
             <div class="goal-stats">
-              <div><span>◷</span><strong id="week-hours">0h</strong><small>本周已记录</small></div>
-              <div><span>◫</span><strong id="completed-weeks">0</strong><small>通过周验收</small></div>
+              <div><span>✓</span><strong id="today-completed">0/4</strong><small>当日任务</small></div>
+              <div><span>▦</span><strong id="checked-days">0/7</strong><small>本周打卡</small></div>
             </div>
             <p id="next-milestone" class="milestone"></p>
           </aside>
