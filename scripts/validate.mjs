@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const requiredFiles = ['index.html', 'tokens.css', 'garden.css', 'styles.css', 'app.js', 'plan-data.js', 'duolingo-data.json', 'scripts/fetch-duolingo.mjs', '404.html', 'assets/reading.svg', 'assets/plant.svg', 'ASSET-LICENSES.md'];
+const requiredFiles = ['index.html', 'tokens.css', 'garden.css', 'styles.css', 'app.js', 'plan-data.js', 'nico-plan.js', 'duolingo-data.json', 'scripts/fetch-duolingo.mjs', '404.html', 'assets/reading.svg', 'assets/plant.svg', 'ASSET-LICENSES.md'];
 for (const file of requiredFiles) {
   if (!fs.existsSync(file)) throw new Error(`Missing required file: ${file}`);
 }
@@ -9,12 +9,16 @@ for (const file of requiredFiles) {
 const context = { window: {} };
 vm.runInNewContext(fs.readFileSync('plan-data.js', 'utf8'), context);
 const plan = context.window.LEARNING_PLAN;
+vm.runInNewContext(fs.readFileSync('nico-plan.js', 'utf8'), context);
+const nicoPlan = context.window.NICO_LEARNING_PLAN;
 
 if (!plan || plan.weeks.length !== 52) {
   throw new Error(`Expected 52 weeks, found ${plan?.weeks?.length ?? 0}`);
 }
 if (plan.phases.length !== 4) throw new Error('Expected 4 learning phases');
 if (plan.materials.length < 8) throw new Error('The materials library is incomplete');
+if (!nicoPlan || nicoPlan.weeks.length !== 52 || nicoPlan.phases.length !== 5) throw new Error('Nico plan must include 52 weeks and 5 phases');
+if (nicoPlan.profile?.learner !== 'Nico') throw new Error('Nico profile is missing');
 
 const requiredWeekFields = ['week', 'phase', 'title', 'focus', 'materials', 'output', 'check', 'hours', 'tasks'];
 for (const week of plan.weeks) {
@@ -33,8 +37,8 @@ const dailyFeatureMarkers = ['taskNotes', '今天具体怎么学', '完成标准
 for (const marker of dailyFeatureMarkers) {
   if (!appSource.includes(marker)) throw new Error(`Daily learning workflow is missing: ${marker}`);
 }
-if ((appSource.match(/name:'周[一二三四五六日]'/g) || []).length !== 7) {
-  throw new Error('Expected seven daily learning schedules');
+if ((appSource.match(/name:'周[一二三四五六日]'/g) || []).length < 14) {
+  throw new Error('Expected seven daily learning schedules for both plans');
 }
 
 const duolingo = JSON.parse(fs.readFileSync('duolingo-data.json', 'utf8'));

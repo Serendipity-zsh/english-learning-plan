@@ -1,6 +1,11 @@
 (() => {
-  const { phases, weeks, materials } = window.LEARNING_PLAN;
-  const storageKey = 'english-year-one-v1';
+  const planChoice = new URLSearchParams(location.search).get('plan');
+  const activePlan = planChoice === 'nico' ? window.NICO_LEARNING_PLAN : window.LEARNING_PLAN;
+  const planId = activePlan.profile?.id || 'leo-english-year-one';
+  const learnerName = activePlan.profile?.learner || 'Leo';
+  const targetHours = activePlan.profile?.targetHours || 650;
+  const { phases, weeks, materials } = activePlan;
+  const storageKey = `learning-workspace:${planId}:v1`;
   const calendarDayIndex = (new Date().getDay() + 6) % 7;
   const defaultState = { currentWeek: 1, selectedDay: calendarDayIndex, completedTasks: {}, taskNotes: {}, passedWeeks: [], logs: [], scores: [], customMaterials: [] };
   let state = loadState();
@@ -9,8 +14,8 @@
   let historyPage = 1;
   let printing = false;
   let materialFilter = '全部';
-  const materialCategories = ['全部','听力','口语','阅读与语法','考试','影视'];
-  const materialTypes = ['阅读与语法','听力','听力','口语','阅读与语法','阅读与语法','考试','考试','影视'];
+  const materialCategories = activePlan.materialCategories || ['全部','听力','口语','阅读与语法','考试','影视'];
+  const materialTypes = activePlan.materialTypes || ['阅读与语法','听力','听力','口语','阅读与语法','阅读与语法','考试','考试','影视'];
   const scrollPositions = {};
   let currentView = '';
   let timerSeconds = 25 * 60;
@@ -21,6 +26,39 @@
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
+  function setupPlanIdentity() {
+    const isNico = planChoice === 'nico';
+    const planName = activePlan.profile?.name || '英语进阶计划';
+    document.title = planName;
+    $('.progress-track').setAttribute('aria-valuemax', targetHours);
+    $$('.brand strong, .landing-brand strong').forEach(node => { node.textContent = planName; });
+    $$('.brand small, .landing-brand small').forEach(node => { node.textContent = isNico ? 'Nico · English Year One' : 'Leo · English Year One'; });
+    if (isNico) {
+      $('#landing-title').innerHTML = '把基础，练成<br />稳定的英语能力。';
+      $('.landing-copy > p:last-child').textContent = '从 IELTS 5.5 到 6.5+，同时建立能用于会议、汇报、邮件和面试的英语能力。';
+      const metrics = $$('.landing-metrics dt');
+      metrics[1].textContent = `${targetHours}h`;
+      metrics[2].textContent = '6.5+';
+      $('.goal-score').textContent = '6.5+';
+      $('.goal-caption').innerHTML = 'IELTS<br />target';
+      $('#duolingo-card .duolingo-identity small').textContent = '学习计划基线';
+      $$('#duolingo-card .duolingo-stats small')[0].textContent = '当前起点';
+      $$('#duolingo-card .duolingo-stats small')[1].textContent = '年度目标';
+      $('#record-duolingo').closest('article').querySelector('small').textContent = 'Anki 回顾 · 手动记录';
+      $('#record-duolingo').nextElementSibling.textContent = '正确率';
+    }
+    $('#plan-picker').innerHTML = [
+      ['leo','Leo 的英语进阶','高 A1 → IELTS 6.5'],
+      ['nico','Nico 的能力升级','IELTS 5.5 → 6.5+'],
+    ].map(([id,name,detail]) => `<button class="landing-plan-option ${isNico === (id==='nico')?'is-selected':''}" data-plan-choice="${id}" type="button"><strong>${name}</strong><small>${detail}</small></button>`).join('');
+    $$('[data-plan-choice]').forEach(button => button.addEventListener('click', () => {
+      const next = button.dataset.planChoice;
+      if ((next === 'nico') === isNico) return;
+      location.href = `${location.pathname}?plan=${next}#home`;
+    }));
+    $('#stage-strip').innerHTML = phases.map((phase, index) => `<article><span>${String(index+1).padStart(2,'0')}</span><small>${phase.range}</small><strong>${phase.name}</strong><em>${phase.target}</em></article>`).join('');
+  }
+  setupPlanIdentity();
   const localDate = new Date();
   const today = `${localDate.getFullYear()}-${String(localDate.getMonth()+1).padStart(2,'0')}-${String(localDate.getDate()).padStart(2,'0')}`;
   $('#today-date').textContent = new Intl.DateTimeFormat('zh-CN', { month:'long', day:'numeric', weekday:'long' }).format(new Date());
@@ -63,6 +101,15 @@
   }
   async function loadDuolingoProfile() {
     const card = $('#duolingo-card');
+    if (activePlan.profile?.duolingo === false) {
+      $('#duolingo-title').textContent = `${learnerName} · 计划起点`;
+      $('#duolingo-streak').textContent = activePlan.profile.startingLevel;
+      $('#duolingo-english-xp').textContent = activePlan.profile.target;
+      $('#duolingo-state').textContent = '独立计划';
+      $('#duolingo-sync-time').textContent = '学习数据独立保存；建议每周记录 Anki 正确率、模考成绩与输出证据。';
+      card.setAttribute('aria-busy', 'false');
+      return;
+    }
     try {
       const response = await fetch(`duolingo-data.json?v=${Date.now()}`, { cache:'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -82,6 +129,12 @@
   }
 
   const resourceLinks = [
+    { match:['Anki'], label:'打开 Anki', url:'https://apps.ankiweb.net/' },
+    { match:['British Council'], label:'打开 British Council', url:'https://learnenglish.britishcouncil.org/free-resources/listening' },
+    { match:['Language Reactor'], label:'打开 Language Reactor', url:'https://www.languagereactor.com/help/basic' },
+    { match:['ELSA'], label:'打开 ELSA Speak', url:'https://elsaspeak.com/' },
+    { match:['Write & Improve'], label:'打开 Write & Improve', url:'https://writeandimprove.com/' },
+    { match:['Toggl'], label:'打开 Toggl Track', url:'https://toggl.com/track/' },
     { match:['Duolingo'], label:'打开 Duolingo', url:'https://www.duolingo.com/' },
     { match:['VOA'], label:'打开 VOA 课程', url:'https://learningenglish.voanews.com/p/5644.html' },
     { match:['BBC','6 Minute English','English for Work','Pronunciation'], label:'打开 BBC Learning English', url:'https://www.bbc.co.uk/learningenglish/' },
@@ -99,7 +152,24 @@
     return resourceLinks.find(item => item.match.some(keyword => String(text).includes(keyword))) || resourceLinks.find(item => item.match.includes('ChatGPT'));
   }
 
+  function nicoDailySchedule(week) {
+    const scale = week.hours / 12;
+    const minutes = value => Math.max(10, Math.round(value * scale / 5) * 5);
+    const task = (title, material, value, steps, evidence, resourceText=material, prompt='') => ({ title, material, minutes:minutes(value), steps, evidence, resource:resourceFor(resourceText), prompt });
+    const talkPrompt = `你是 Nico 的英语口语教练。当前是第 ${week.week} 周“${week.title}”，重点：${week.focus}。请用英文一次问一个问题，至少追问 5 次；结束后用中文只指出最重要的 3 个表达、语法或发音问题，并让我重说一次。`;
+    return [
+      {name:'周一',theme:'词块与核心输入',tasks:[task('Anki 词块复习','Anki：复习旧卡并新增 10–15 张',25,['遮住中文主动回忆','每张卡朗读例句','为 5 个词块造工作场景句'],'完成复习；保存 5 个个人例句','Anki'),task('分级精听',week.materials,35,['第一遍盲听确认主题','第二遍看稿标出听不出的词块','第三遍遮稿复述'],'记录首听理解率和 5 个词块','British Council'),task('Sentence Lab',`围绕“${week.title}”拆解 5–10 个长句`,25,['找主语和谓语','标连接词与从句','合上原句做简单英文复述'],'保存至少 5 句拆解笔记','British Council'),task('当日短输出','80–120 字英文短写作',20,['独立写完初稿','检查时态和冠词','使用 3 个本周词块'],'保存初稿与 3 个新词块','Write & Improve')]},
+      {name:'周二',theme:'听辨与复述',tasks:[task('Anki 巩固','Anki：昨日新卡与易错卡',20,['优先复习模糊词','朗读完整例句','标记仍不熟的词块'],'回顾准确率达到 80% 或记录错词','Anki'),task('精听与跟读',`${week.materials}：30–90 秒片段`,40,['盲听并记关键词','逐句对照文本','跟读后录一遍复述'],'保存片段名、复述录音与 3 个听辨问题','Language Reactor'),task('口语反应',`主题：${week.title}`,25,['用关键词说 1 分钟','让 ChatGPT 连续追问','根据反馈重说一次'],'完成 5 轮追问并保存反馈','ChatGPT',talkPrompt)]},
+      {name:'周三',theme:'结构与口语',tasks:[task('Anki 词块复习','Anki：工作与 IELTS 词块',25,['主动回忆搭配','说出个人例句','复习弱词'],'完成当天复习','Anki'),task('阅读结构',week.focus,30,['限时阅读一个段落或短文','标主旨、细节与连接词','用 3 句英文总结'],'保存主旨和 3 个细节','British Council'),task('ELSA 与连续表达','ELSA 10 分钟 + 主题口述',30,['完成发音练习','按观点—理由—例子—结论表达','回听后标记长停顿'],'保存 1–2 分钟录音','ELSA',talkPrompt)]},
+      {name:'周四',theme:'写作与纠错',tasks:[task('Anki 回顾','Anki：本周目标词块',20,['复习旧卡','选 5 个词块造句','标记不稳定卡片'],'至少 5 个词块能主动使用','Anki'),task('写作一稿',`围绕“${week.title}”完成英文写作`,35,['独立完成 120–250 字','先检查任务回应和结构','再检查语言准确度'],'保存一稿','Write & Improve'),task('二次修改',`修改当天写作`,25,['获取反馈但不直接代写','自己重写关键句','总结 3 类重复错误'],'保存一稿、二稿和错误分类','Write & Improve')]},
+      {name:'周五',theme:'真实职场迁移',tasks:[task('Anki 收尾','Anki：本周词块回顾',20,['只复习本周卡片','口头说出 10 个例句','标记下周继续卡'],'10 个词块中至少 8 个能调用','Anki'),task('职场英语任务',week.output,40,['按本周任务独立完成','使用背景—行动—结果结构','留下录音、文本或纪要'],'完成并保存本周职场产物','ChatGPT',talkPrompt),task('影视或视频精听','Language Reactor：选择 3–5 分钟相关片段',30,['英文字幕分段理解','提取 5 个自然表达','用表达改写工作句'],'保存片段与 5 个表达','Language Reactor')]},
+      {name:'周六',theme:'测试与长任务',tasks:[task('IELTS 或专项测试',week.check,60,['严格计时独立完成','记录正确率或评分','按题型和原因分类错误'],'保存成绩与错误分类','IELTS 官方'),task('深度复述',week.materials,30,['复听或重读本周材料','脱离文本复述 2 分钟','让 ChatGPT 追问'],'保存 2 分钟录音或会话文字','ChatGPT',talkPrompt),task('本周作品整理',week.output,25,['确认文本或录音可打开','补充一句自评','归档到学习记录'],'至少一项完整输出证据','ChatGPT')]},
+      {name:'周日',theme:'轻复盘与恢复',tasks:[task('周复盘','本周日志、错题与录音',30,['统计有效学习时长','选出 Top 3 错误','决定下周只优化的 1–2 件事'],'完成周报：时长、证据、错误与下周动作','Toggl'),task('轻度英语输入','BBC 或影视轻输入',20,['只选择感兴趣的短内容','不逐词查词','记录 1 个想再次使用的表达'],'保留 1 个表达；其余时间休息','British Council')]},
+    ];
+  }
+
   function dailySchedule(week) {
+    if (activePlan.profile?.id === 'nico-english-2026') return nicoDailySchedule(week);
     const weekMaterials = week.materials.split('；');
     const mainMaterial = weekMaterials[0];
     const supportMaterial = weekMaterials[1] || mainMaterial;
@@ -284,10 +354,10 @@
     $('#week-detail').innerHTML = `<div class="focus-meta"><span class="tag">${esc(phase.range)}</span><span class="tag">目标 ${esc(phase.level)}</span><span class="tag">建议 ${week.hours} 小时</span></div><h3>${esc(week.focus)}</h3><p><strong>使用材料：</strong>${esc(week.materials)}</p><div class="focus-columns"><div><h4>本周产物</h4><ul><li>${esc(week.output)}</li><li>至少 2 次保留录音或文字证据</li></ul></div><div><h4>通过标准</h4><ul><li>${esc(week.check)}</li><li>完成学习记录和三类高频错误复盘</li></ul></div></div>`;
     const totalMinutes = state.logs.reduce((sum, l) => sum + Number(l.minutes || 0), 0);
     const totalHours = totalMinutes / 60;
-    $('#hours-copy').textContent = `${totalHours.toFixed(1)} / 650 小时`;
-    $('#hours-progress').style.width = `${Math.max(0, Math.min(100, totalHours/650*100))}%`;
-    $('.progress-track').setAttribute('aria-valuenow', Math.max(0, Math.min(650, totalHours)));
-    $('.progress-track').setAttribute('aria-valuetext', `已学习 ${totalHours.toFixed(1)} 小时，目标 650 小时`);
+    $('#hours-copy').textContent = `${totalHours.toFixed(1)} / ${targetHours} 小时`;
+    $('#hours-progress').style.width = `${Math.max(0, Math.min(100, totalHours/targetHours*100))}%`;
+    $('.progress-track').setAttribute('aria-valuenow', Math.max(0, Math.min(targetHours, totalHours)));
+    $('.progress-track').setAttribute('aria-valuetext', `已学习 ${totalHours.toFixed(1)} 小时，目标 ${targetHours} 小时`);
     $('#next-milestone').textContent = `下一里程碑 ${phase.level} · ${phase.milestone}`;
   }
 

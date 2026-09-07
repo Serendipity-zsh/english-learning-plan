@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="tokens.css?v=20260907-landing-fix" />
-    <link rel="stylesheet" href="garden.css?v=20260907-landing-fix" />
+    <link rel="stylesheet" href="garden.css?v=20260907-nico" />
   </head>
   <body>
     <section id="landing-screen" class="landing-screen" aria-labelledby="landing-title">
@@ -36,6 +36,7 @@
           <div><dt>650h</dt><dd>建议有效学习</dd></div>
           <div><dt>6.5</dt><dd>IELTS 年度目标</dd></div>
         </dl>
+        <div id="plan-picker" class="landing-plan-picker" aria-label="选择学习计划"></div>
         <button id="enter-learning" class="landing-primary" type="button">开始今天的练习 <span aria-hidden="true">→</span></button>
         <p class="landing-footnote">你的打卡和学习记录默认仅保存在当前浏览器。</p>
       </div>
@@ -136,7 +137,7 @@
           </aside>
         </section>
 
-        <section class="stage-strip" aria-label="年度阶段">
+        <section id="stage-strip" class="stage-strip" aria-label="年度阶段">
           <article><span>01</span><small>第 1–12 周</small><strong>高 A1 到 A2</strong><em>建立基础与输出习惯</em></article>
           <article><span>02</span><small>第 13–24 周</small><strong>A2 到 B1</strong><em>进入真实交流</em></article>
           <article><span>03</span><small>第 25–39 周</small><strong>B1 到 B2</strong><em>强化工作英语</em></article>
@@ -244,6 +245,6 @@
     <footer class="site-footer"><strong>每天留下一个可见成果。</strong><span>英语进阶计划 · 数据默认保存在当前浏览器 · 插图来自 Open Doodles（CC0）</span></footer>
     <nav class="mobile-nav" aria-label="移动端导航"><button class="is-active" data-view="today">今天</button><button data-view="roadmap">计划</button><button data-view="materials">材料</button><button data-view="records">记录</button></nav>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <script src="plan-data.js?v=20260907-landing-fix"></script><script src="app.js?v=20260907-landing-fix"></script>
+    <script src="plan-data.js?v=20260907-landing-fix"></script><script src="nico-plan.js?v=20260907-nico"></script><script src="app.js?v=20260907-nico"></script>
   </body>
 </html>
