@@ -3,13 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#18333b" />
+    <meta name="theme-color" content="#24483b" />
     <meta name="description" content="从高 A1 到雅思 6.5 的 52 周英语学习与进度记录计划" />
     <meta property="og:title" content="英语进阶计划" />
     <meta property="og:description" content="一套可执行、可记录、可验收的 52 周英语学习计划" />
     <title>英语进阶计划</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="tokens.css" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="garden.css" />
   </head>
   <body>
     <header class="site-header">
@@ -33,9 +36,14 @@
       <section id="view-today" class="view is-active" aria-labelledby="today-title">
         <div class="dashboard-grid">
           <div class="today-panel">
-            <p class="eyebrow">每日打卡</p>
-            <h1 id="today-title">今天的<br />专注练习</h1>
+            <p id="today-date" class="today-date"></p>
+            <h1 id="today-title">今天，继续练习。</h1>
             <p id="week-summary" class="lede"></p>
+            <button id="continue-task" class="resume-button" type="button">
+              <span>下一项</span>
+              <strong id="continue-task-title">准备今日学习</strong>
+              <small id="continue-task-meta">查看具体步骤</small>
+            </button>
           </div>
           <aside class="progress-rail" aria-label="学习进度概览">
             <section class="goal-card">
@@ -66,7 +74,7 @@
 
         <section class="daily-workspace" aria-labelledby="selected-day-target">
           <div class="daily-workspace-head">
-            <div><p class="eyebrow">01 · 选择今天</p><h2 id="selected-day-target">今日计划</h2></div>
+            <div><p class="workspace-kicker">选择学习日</p><h2 id="selected-day-target">今日计划</h2></div>
             <strong id="selected-day-progress">0 / 4 项</strong>
           </div>
           <div id="day-switcher" class="day-switcher" aria-label="选择星期"></div>

@@ -13,6 +13,7 @@
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
   const today = new Date().toISOString().slice(0, 10);
+  $('#today-date').textContent = new Intl.DateTimeFormat('zh-CN', { month:'long', day:'numeric', weekday:'long' }).format(new Date());
   $('#log-date').value = today;
   $('#score-date').value = today;
 
@@ -153,14 +154,14 @@
     const selectedDay = Math.min(6, Math.max(0, Number(state.selectedDay ?? calendarDayIndex)));
     const day = schedule[selectedDay];
     $('#header-week').textContent = `第 ${week.week} 周`;
-    $('#today-title').innerHTML = selectedDay === calendarDayIndex
-      ? '今天的<br>专注练习'
-      : `${day.name}的<br>学习计划`;
+    $('#today-title').textContent = selectedDay === calendarDayIndex
+      ? `${day.name}，${day.theme}`
+      : `${day.name}的${day.theme}`;
     $('#week-summary').textContent = `${phase.name}阶段。本周聚焦${week.focus}。${day.name}的重点是${day.theme}，计划约 ${day.tasks.reduce((sum, item) => sum + item.minutes, 0)} 分钟。`;
     $('#focus-title').textContent = week.title;
     $('#day-switcher').innerHTML = schedule.map((item, dayIndex) => {
       const done = dayIsComplete(week.week, dayIndex, schedule);
-      return `<button class="day-button ${dayIndex===selectedDay?'is-active':''} ${done?'is-done':''}" data-day="${dayIndex}"><span>${item.name}</span><small>${dayIndex===calendarDayIndex?'今天':done?'已完成':`${item.tasks.reduce((sum,t)=>sum+t.minutes,0)} 分`}</small></button>`;
+      return `<button class="day-button ${dayIndex===selectedDay?'is-active':''} ${done?'is-done':''}" data-day="${dayIndex}" aria-pressed="${dayIndex===selectedDay}"><span>${item.name}</span><small>${dayIndex===calendarDayIndex?'今天':done?'已完成':`${item.tasks.reduce((sum,t)=>sum+t.minutes,0)} 分`}</small></button>`;
     }).join('');
     $$('[data-day]').forEach(button => button.addEventListener('click', () => { state.selectedDay=Number(button.dataset.day); saveState(); }));
     const keyPrefix = `w${week.week}-d${selectedDay}-t`;
@@ -172,7 +173,7 @@
       const note = state.taskNotes?.[taskKey] || '';
       const expanded = expandedTaskKey === taskKey;
       const next = i === firstIncompleteIndex;
-      return `<article class="study-task ${checked?'is-done':''} ${expanded?'is-expanded':''} ${next?'is-next':''}">
+      return `<article class="study-task ${checked?'is-done':''} ${expanded?'is-expanded':''} ${next?'is-next':''}" data-task-card="${taskKey}">
         <div class="study-task-head"><span class="task-index">${String(i+1).padStart(2,'0')}</span><div><strong>${esc(task.title)}</strong><small>${esc(task.material)} · ${task.minutes} 分钟${next?' · 下一项':''}</small></div><button class="task-expand" data-expand-task="${taskKey}" aria-expanded="${expanded}">${expanded?'收起':'查看步骤'}</button><label class="task-check"><input type="checkbox" data-task-key="${taskKey}" ${checked?'checked':''}><span>${checked?'已完成':'打卡'}</span></label></div>
         <div class="task-detail" ${expanded?'':'hidden'}>
           <div class="study-task-body"><div><p class="task-label">今天具体怎么学</p><ol>${task.steps.map(step=>`<li>${esc(step)}</li>`).join('')}</ol></div><div class="task-proof"><span>完成标准</span><p>${esc(task.evidence)}</p></div></div>
@@ -207,6 +208,11 @@
     const completedDays = schedule.filter((_, dayIndex) => dayIsComplete(week.week, dayIndex, schedule)).length;
     $('#selected-day-target').textContent = `${day.name} · ${day.theme}`;
     $('#selected-day-progress').textContent = `${selectedCompleted} / ${day.tasks.length} 项`;
+    const continueButton = $('#continue-task');
+    const continueTask = firstIncompleteIndex >= 0 ? day.tasks[firstIncompleteIndex] : null;
+    $('#continue-task-title').textContent = continueTask ? continueTask.title : `${day.name}任务已完成`;
+    $('#continue-task-meta').textContent = continueTask ? `${continueTask.material} · ${continueTask.minutes} 分钟` : '查看本周重点与验收标准';
+    continueButton.dataset.targetTask = continueTask ? `${keyPrefix}${firstIncompleteIndex}` : '';
     $('#today-completed').textContent = `${selectedCompleted}/${day.tasks.length}`;
     $('#checked-days').textContent = `${completedDays}/7`;
     $('#week-detail').innerHTML = `<div class="focus-meta"><span class="tag">${esc(phase.range)}</span><span class="tag">目标 ${esc(phase.level)}</span><span class="tag">建议 ${week.hours} 小时</span></div><h3>${esc(week.focus)}</h3><p><strong>使用材料：</strong>${esc(week.materials)}</p><div class="focus-columns"><div><h4>本周产物</h4><ul><li>${esc(week.output)}</li><li>至少 2 次保留录音或文字证据</li></ul></div><div><h4>通过标准</h4><ul><li>${esc(week.check)}</li><li>完成学习记录和三类高频错误复盘</li></ul></div></div>`;
@@ -216,6 +222,17 @@
     $('#hours-progress').style.width = `${Math.min(100, totalHours/650*100)}%`;
     $('#next-milestone').textContent = `下一里程碑 ${phase.level} · ${phase.milestone}`;
   }
+
+  $('#continue-task').addEventListener('click', () => {
+    const taskKey = $('#continue-task').dataset.targetTask;
+    if (!taskKey) {
+      $('#focus-title').scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
+    expandedTaskKey = taskKey;
+    renderDashboard();
+    document.querySelector(`[data-task-card="${taskKey}"]`)?.scrollIntoView({ behavior:'smooth', block:'center' });
+  });
 
   function renderRoadmap() {
     $('#week-select').innerHTML = weeks.map(w => `<option value="${w.week}" ${w.week===state.currentWeek?'selected':''}>第 ${w.week} 周 · ${esc(w.title)}</option>`).join('');

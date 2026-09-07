@@ -1,6 +1,13 @@
 [
   {
     "date": "2026-09-07",
+    "macrostructure": "Feature Stack",
+    "theme": "Garden",
+    "enrichment": "none",
+    "brief": "Reference-led redesign with a sticky daily brief and focused task stack"
+  },
+  {
+    "date": "2026-09-07",
     "macrostructure": "Narrative Workflow",
     "theme": "Plume",
     "enrichment": "none",
