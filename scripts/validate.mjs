@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const requiredFiles = ['index.html', 'tokens.css', 'garden.css', 'styles.css', 'app.js', 'plan-data.js', 'nico-plan.js', 'duolingo-data.json', 'scripts/fetch-duolingo.mjs', '404.html', 'assets/reading.svg', 'assets/plant.svg', 'ASSET-LICENSES.md'];
+const requiredFiles = ['index.html', 'tokens.css', 'garden.css', 'styles.css', 'app.js', 'plan-data.js', 'nico-plan.js', 'duolingo-data.json', 'scripts/fetch-duolingo.mjs', '404.html', 'favicon.svg', 'assets/reading.svg', 'assets/plant.svg', 'ASSET-LICENSES.md'];
 for (const file of requiredFiles) {
   if (!fs.existsSync(file)) throw new Error(`Missing required file: ${file}`);
 }
