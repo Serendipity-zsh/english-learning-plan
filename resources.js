@@ -1,0 +1,22 @@
+// Public source pages are linked, never copied. Original course texts live in course-*.js.
+window.STUDY_RESOURCES = [
+  {id:'voa-01',name:'VOA · Lesson 1: Welcome!',category:'听力',level:'A1',cost:'免费',url:'https://learningenglish.voanews.com/a/lets-learn-english-lesson-one/3111026.html',note:'问候与介绍。打开 Conversation 和 Speaking Practice；使用原站音频、文本与测验。'},
+  {id:'voa-02',name:'VOA · Lesson 2: Hello, I’m Anna!',category:'听力',level:'A1',cost:'免费',url:'https://learningenglish.voanews.com/a/lets-learn-english-lesson-2-hello/3113733.html',note:'约48秒的 Conversation：介绍姓名、来自哪里与住处。先听，再核对英文文本。'},
+  {id:'voa-03',name:'VOA · Lesson 3: I’m Here!',category:'听力',level:'A1',cost:'免费',url:'https://learningenglish.voanews.com/p/5644.html',note:'课程目录中的 Lesson 3；确认标题后打开。练习位置表达。'},
+  {id:'voa-04',name:'VOA · Lesson 4: What Is It?',category:'听力',level:'A1',cost:'免费',url:'https://learningenglish.voanews.com/p/5644.html',note:'课程目录中的 Lesson 4；练习指认物品与提问。'},
+  {id:'voa-48',name:'VOA · Lesson 48: Have You Ever…?',category:'听力',level:'A2',cost:'免费',url:'https://learningenglish.voanews.com/a/lets-learn-english-lesson-48-have-you-ever/3753664.html',note:'现在完成时与经历；用 Conversation 核对 have/has + 过去分词。'},
+  {id:'bc-a1',name:'British Council · A1 原声听力',category:'听力',level:'A1',cost:'免费',url:'https://learnenglish.britishcouncil.org/free-resources/listening/a1',note:'分级课程目录；先做 preparation，再听录音并完成 Task 1/2。优先 Meeting a new team member。'},
+  {id:'bc-a2',name:'British Council · A2 原声听力',category:'听力',level:'A2',cost:'免费',url:'https://learnenglish.britishcouncil.org/free-resources/listening/a2',note:'分级课程目录；推荐 Changing a meeting time / A morning briefing。用原站练习核对理解。'},
+  {id:'bc-b1',name:'British Council · B1 原声听力',category:'听力',level:'B1',cost:'免费',url:'https://learnenglish.britishcouncil.org/free-resources/listening/b1',note:'分级课程目录；推荐 Making a decision / A team meeting about diversity。记录题数与正确题数。'},
+  {id:'bc-b2',name:'British Council · B2 原声听力',category:'听力',level:'B2',cost:'免费',url:'https://learnenglish.britishcouncil.org/free-resources/listening/b2',note:'分级课程目录，含录音、文本与练习。难度过高时回到 B1，不按日历强行升级。'},
+  {id:'bc-c1',name:'British Council · C1 选学',category:'听力',level:'C1',cost:'免费',url:'https://learnenglish.britishcouncil.org/free-resources/listening/c1',note:'仅作挑战内容，先完成B2再考虑；不作为本计划完成条件。'},
+  {id:'work-email',name:'English for emails · 工作邮件',category:'职场',level:'A2–B1',cost:'免费',url:'https://learnenglish.britishcouncil.org/free-resources/business/english-emails',note:'Unit 4 开头与结尾；Unit 5 安排；Unit 7 组织写作。按当天任务选择具体单元。'},
+  {id:'ielts-academic',name:'IELTS Academic · 官方样题',category:'考试',level:'考试',cost:'免费样题',url:'https://ielts.org/take-a-test/preparation-resources/sample-test-questions/academic-test',note:'学术类；Task 1 为图表、流程或地图，Task 2 为议论文。完整模考要使用未练过的同一套题。'},
+  {id:'ielts-general',name:'IELTS General Training · 官方样题',category:'考试',level:'考试',cost:'免费样题',url:'https://ielts.org/take-a-test/preparation-resources/sample-test-questions/general-training-test',note:'培训类；Task 1 为书信，Task 2 为议论文。听说与Academic相同，阅读写作不同。'},
+  {id:'ielts-scoring',name:'IELTS · 官方评分说明',category:'考试',level:'考试',cost:'免费',url:'https://ielts.org/take-a-test/your-results/ielts-scoring-in-detail',note:'核对四项评分维度。练习测验不换算雅思分；写说要由合适的评分者校准。'},
+  {id:'cambridge-practice',name:'Cambridge · IELTS 练习材料',category:'考试',level:'考试',cost:'教材通常付费',url:'https://www.cambridgeenglish.org/exams-and-tests/ielts/preparation/',note:'选与你考试类型一致的正版练习。记录册号与Test编号，保留未做过的卷用于模考。'},
+  {id:'duolingo',name:'Duolingo · 基础巩固',category:'词汇',level:'全年选用',cost:'免费/付费可选',url:'https://www.duolingo.com/',note:'可作为基础练习的一部分，建议10–15分钟；XP和课程进度不等于独立英语测评。'},
+  {id:'anki',name:'Anki · 间隔复习',category:'词汇',level:'全年选用',cost:'平台费用不同',url:'https://apps.ankiweb.net/',note:'优先复习自己的错句和词块。站内也提供复习队列，不必额外安装才能使用本站。'},
+  {id:'write-improve',name:'Write & Improve · 写作反馈',category:'写作',level:'全年选用',cost:'免费/付费可选',url:'https://writeandimprove.com/',note:'先独立写，再根据反馈重写。自动反馈用来练习，不作为正式雅思评分。'},
+  {id:'language-reactor',name:'Language Reactor · 影视辅助',category:'影视',level:'B1+选用',cost:'免费/付费可选',url:'https://www.languagereactor.com/',note:'自备合法片源。Modern Family / The Office / Silicon Valley 仅为选学；每次选30–90秒，保存季集与时间段，不要求裸看整集。'},
+];

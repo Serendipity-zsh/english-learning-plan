@@ -1,5 +1,7 @@
 # Visual assets
 
+Site mark (book pages inside a speech bubble): original project SVG, shared by the sidebar and browser icon. The ICO and Apple touch icon are raster exports of the same source.
+
 Reading and plant illustrations: Pablo Stanley, Open Doodles.
 Source: https://opendoodles.s3-us-west-1.amazonaws.com/reading.svg
 Source: https://opendoodles.s3-us-west-1.amazonaws.com/plant.svg
